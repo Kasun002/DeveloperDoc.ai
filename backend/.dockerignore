@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+.eggs/
+*.egg-info/
+*.egg
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+
+# Docker
+*.db

@@ -1,0 +1,26 @@
+# Core framework
+fastapi
+uvicorn[standard]
+
+# Data validation and settings
+pydantic
+python-dotenv
+
+# Database (example: SQLAlchemy, async support)
+sqlalchemy
+asyncpg
+
+# Security
+authlib
+passlib[bcrypt]
+
+# AI/ML (placeholder, add as needed)
+openai
+
+# Testing
+pytest
+httpx
+
+# Linting/Formatting
+black
+isort
