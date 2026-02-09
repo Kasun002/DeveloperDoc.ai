@@ -1,0 +1,253 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.virtualenv/
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+.idea_modules/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-shm
+*.db-wal
+auth_db.sqlite
+test*.db
+
+# Alembic
+# Keep alembic/ directory but ignore generated files
+alembic/versions/__pycache__/
+
+# Pytest
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.log
+.hypothesis/
+
+# Logs
+logs/
+*.log
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+nosetests.xml
+test-results/
+junit.xml
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff (if applicable)
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff (if applicable)
+instance/
+.webassets-cache
+
+# Scrapy stuff (if applicable)
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Backup files
+*.bak
+*.swp
+*.swo
+*~
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# FastAPI specific
+.fastapi_cache/
+
+# Uvicorn
+uvicorn.log
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Security
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+.secrets/
+
+# IDE and Editor
+*.sublime-project
+*.sublime-workspace
+.vscode/
+.idea/
+
+# Local configuration
+local_config.py
+config.local.py
+
+# Profiling
+*.prof
+*.lprof
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Migrations (optional - uncomment if you want to ignore migration files)
+# alembic/versions/*.py
+# !alembic/versions/__init__.py
+
+# Documentation
+*.md
+!README.md
+
+# Keep these files
+!.gitkeep
+!.env.example

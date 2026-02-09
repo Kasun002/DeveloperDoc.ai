@@ -4,22 +4,29 @@ uvicorn[standard]
 
 # Data validation and settings
 pydantic
+pydantic-settings
 python-dotenv
+email-validator
 
-# Database (example: SQLAlchemy, async support)
+# Database (SQLAlchemy with PostgreSQL support)
 sqlalchemy
-asyncpg
+psycopg2-binary
+alembic
 
 # Security
 authlib
 passlib[bcrypt]
+python-jose[cryptography]
+bcrypt
 
 # AI/ML (placeholder, add as needed)
 openai
 
 # Testing
 pytest
+pytest-asyncio
 httpx
+hypothesis
 
 # Linting/Formatting
 black
