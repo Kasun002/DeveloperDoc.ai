@@ -121,6 +121,22 @@
     - [Documentation](#documentation)
     - [Implementation Summaries](#implementation-summaries)
     - [External Resources](#external-resources)
+  - [FAQ](#faq)
+    - [General Questions](#general-questions)
+    - [Technical Questions](#technical-questions)
+    - [Cost Questions](#cost-questions)
+  - [License](#license)
+  - [Acknowledgments](#acknowledgments)
+    - [Technologies](#technologies)
+    - [Contributors](#contributors)
+  - [Support](#support)
+    - [Getting Help](#getting-help)
+    - [Reporting Bugs](#reporting-bugs)
+    - [Feature Requests](#feature-requests)
+  - [Contact](#contact)
+  - [Status](#status)
+    - [System Health](#system-health)
+    - [Test Coverage](#test-coverage-1)
 
 ---
 
@@ -150,29 +166,71 @@ DeveloperDoc.ai is an enterprise-grade AI Agent System that provides intelligent
 
 ```mermaid
 graph TB
-    Client[Client Request] --> FastAPI[FastAPI Endpoint]
-    FastAPI --> SemCache[Semantic Cache<br/>Redis + pgvector]
-    SemCache -->|Cache Miss| Supervisor[Supervisor Agent<br/>LangGraph]
-    SemCache -->|Cache Hit| Response[Response]
+    %% Client Layer
+    Client[Client Request<br/>POST /api/v1/agent/query] --> FastAPI[FastAPI Endpoint<br/>app/api/v1/endpoints/agent.py]
     
-    Supervisor --> SearchAgent[Documentation Search Agent<br/>MCP Tool]
-    Supervisor --> CodeAgent[Code Gen Agent]
+    %% Semantic Cache Layer
+    FastAPI --> SemCache{Semantic Cache Check<br/>Redis + pgvector<br/>Similarity > 0.95?}
+    SemCache -->|Cache Hit<br/>~50ms| CachedResponse[Return Cached Response<br/>TTL: 1 hour]
+    SemCache -->|Cache Miss| Workflow[LangGraph Workflow<br/>app/workflows/agent_workflow.py]
     
-    SearchAgent --> ToolCache[Tool Cache<br/>DiskCache/Redis]
-    ToolCache -->|Cache Miss| PGVector[(pgvector DB<br/>Framework Documentation<br/>HNSW Index)]
-    ToolCache -->|Cache Hit| SearchResult[Documentation Results]
-    PGVector --> CrossEncoder[Cross-Encoder<br/>Re-ranking]
-    CrossEncoder --> SearchResult
+    %% Workflow Orchestration
+    Workflow --> Supervisor[Supervisor Node<br/>Analyze & Route<br/>GPT-4]
     
-    SearchResult --> CodeAgent
-    CodeAgent --> LLM[LLM API]
-    LLM --> Response
+    %% Routing Decision
+    Supervisor --> Route{Routing Strategy}
+    Route -->|SEARCH_ONLY| SearchNode[Search Node]
+    Route -->|CODE_ONLY| CodeNode[Code Gen Node]
+    Route -->|SEARCH_THEN_CODE| SearchNode
     
-    Supervisor --> OTel[OpenTelemetry/<br/>LangSmith]
-    SearchAgent --> OTel
-    CodeAgent --> OTel
+    %% Documentation Search Path
+    SearchNode[Documentation Search Agent<br/>MCP Tool<br/>app/agents/documentation_search_agent.py] --> ToolCache{Tool Cache<br/>DiskCache/Redis<br/>TTL: 5 min}
+    ToolCache -->|Cache Hit| SearchResults[Documentation Results]
+    ToolCache -->|Cache Miss| VectorDB[(Vector Database<br/>PostgreSQL:5433<br/>pgvector + HNSW<br/>1536-dim embeddings)]
     
-    OTel --> Logs[Structured Logs<br/>structlog]
+    VectorDB --> Embedding[Generate Query Embedding<br/>text-embedding-3-small<br/>OpenAI API]
+    Embedding --> VectorSearch[Vector Similarity Search<br/>Cosine Distance<br/>Top-K=10]
+    VectorSearch --> Rerank[Cross-Encoder Re-ranking<br/>ms-marco-MiniLM-L-6-v2<br/>Improve Relevance]
+    Rerank --> SelfCorrect{Confidence Check<br/>Max Score > 0.7?}
+    SelfCorrect -->|Yes| SearchResults
+    SelfCorrect -->|No<br/>Refine Query| VectorDB
+    
+    %% Code Generation Path
+    SearchResults --> CodeNode
+    CodeNode[Code Generation Agent<br/>app/agents/code_gen_agent.py<br/>GPT-4] --> SyntaxValidate[Syntax Validation<br/>app/agents/syntax_validator.py<br/>Language Parsers]
+    
+    %% Validation & Retry Logic
+    SyntaxValidate --> ValidCheck{Syntax Valid?}
+    ValidCheck -->|Yes| FinalResponse[Final Response]
+    ValidCheck -->|No<br/>Max 2 Retries| CodeNode
+    ValidCheck -->|No<br/>Retry Exhausted| SearchNode
+    
+    %% Response Caching
+    FinalResponse --> CacheStore[Store in Semantic Cache<br/>Redis + Embedding]
+    CacheStore --> Response[Return Response<br/>+ Metadata]
+    CachedResponse --> Response
+    
+    %% Observability Layer
+    Workflow -.-> OTel[OpenTelemetry Tracing<br/>app/core/telemetry.py]
+    Supervisor -.-> OTel
+    SearchNode -.-> OTel
+    CodeNode -.-> OTel
+    OTel -.-> Logs[Structured Logs<br/>structlog + JSON<br/>trace_id, tokens, latency]
+    
+    %% Database Layer
+    MainDB[(Main Database<br/>PostgreSQL:5432<br/>Users & Auth)]
+    Redis[(Redis Cache:6379<br/>Semantic Cache<br/>Tool Cache<br/>256MB LRU)]
+    
+    %% Styling
+    classDef cacheLayer fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef agentLayer fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef dbLayer fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef obsLayer fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    
+    class SemCache,ToolCache,CacheStore cacheLayer
+    class Supervisor,SearchNode,CodeNode,SyntaxValidate agentLayer
+    class VectorDB,MainDB,Redis dbLayer
+    class OTel,Logs obsLayer
 ```
 
 ### Component Interaction Flow
