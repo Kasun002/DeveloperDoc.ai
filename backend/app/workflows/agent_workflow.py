@@ -121,7 +121,7 @@ class AgentWorkflow:
         # Compile the graph
         return workflow.compile()
     
-    def supervisor_node(self, state: WorkflowState) -> WorkflowState:
+    async def supervisor_node(self, state: WorkflowState) -> WorkflowState:
         """
         Supervisor node: Analyze prompt and determine routing strategy.
         
@@ -149,12 +149,9 @@ class AgentWorkflow:
         
         try:
             # Determine routing strategy
-            import asyncio
-            routing_strategy = asyncio.run(
-                self.supervisor.determine_routing_strategy(
-                    state["prompt"],
-                    trace_id
-                )
+            routing_strategy = await self.supervisor.determine_routing_strategy(
+                state["prompt"],
+                trace_id
             )
             
             # Update state
@@ -179,7 +176,7 @@ class AgentWorkflow:
         
         return state
     
-    def search_node(self, state: WorkflowState) -> WorkflowState:
+    async def search_node(self, state: WorkflowState) -> WorkflowState:
         """
         Search node: Perform documentation search.
         
@@ -214,14 +211,11 @@ class AgentWorkflow:
             frameworks = [framework] if framework else None
             
             # Perform documentation search
-            import asyncio
-            results = asyncio.run(
-                self.search_agent.search_docs(
-                    query=state["prompt"],
-                    frameworks=frameworks,
-                    top_k=10,
-                    min_score=0.7
-                )
+            results = await self.search_agent.search_docs(
+                query=state["prompt"],
+                frameworks=frameworks,
+                top_k=10,
+                min_score=0.7
             )
             
             search_latency_ms = (time.time() - search_start_time) * 1000
@@ -251,7 +245,7 @@ class AgentWorkflow:
         
         return state
     
-    def code_gen_node(self, state: WorkflowState) -> WorkflowState:
+    async def code_gen_node(self, state: WorkflowState) -> WorkflowState:
         """
         Code generation node: Generate code with optional documentation context.
         
@@ -287,14 +281,11 @@ class AgentWorkflow:
             framework = state.get("framework")
             
             # Generate code
-            import asyncio
-            result = asyncio.run(
-                self.code_gen_agent.generate_code(
-                    prompt=state["prompt"],
-                    documentation_context=doc_context,
-                    framework=framework,
-                    trace_id=trace_id
-                )
+            result = await self.code_gen_agent.generate_code(
+                prompt=state["prompt"],
+                documentation_context=doc_context,
+                framework=framework,
+                trace_id=trace_id
             )
             
             code_gen_latency_ms = (time.time() - code_gen_start_time) * 1000
@@ -556,8 +547,8 @@ class AgentWorkflow:
         }
         
         try:
-            # Execute workflow
-            final_state = self.graph.invoke(initial_state)
+            # Execute workflow (use ainvoke for async nodes)
+            final_state = await self.graph.ainvoke(initial_state)
             
             # Calculate processing time
             processing_time_ms = (time.time() - start_time) * 1000

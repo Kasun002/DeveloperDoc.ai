@@ -326,6 +326,7 @@ class WorkflowState(TypedDict, total=False):
     routing_strategy: RoutingStrategy
     documentation_results: Optional[List[DocumentationResult]]
     generated_code: Optional[str]
+    code_generation_result: Optional[CodeGenerationResult]
     framework: Optional[str]
     iteration_count: int
     max_iterations: int
