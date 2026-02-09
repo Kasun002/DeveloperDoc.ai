@@ -70,3 +70,47 @@ class IncorrectPasswordError(Exception):
     """
 
     pass
+
+
+# AI Agent System Exceptions
+
+class AgentWorkflowError(Exception):
+    """
+    Raised when an agent workflow execution fails.
+    
+    This includes errors during agent orchestration, state management,
+    or workflow transitions.
+    Maps to HTTP 500 Internal Server Error.
+    """
+    pass
+
+
+class AgentTimeoutError(Exception):
+    """
+    Raised when an agent workflow exceeds the maximum execution time.
+    
+    Maps to HTTP 504 Gateway Timeout.
+    """
+    pass
+
+
+class AgentServiceUnavailableError(Exception):
+    """
+    Raised when a required agent service is unavailable.
+    
+    This includes LLM API failures, database connection issues,
+    or MCP tool unavailability.
+    Maps to HTTP 503 Service Unavailable.
+    """
+    pass
+
+
+class InvalidPromptError(Exception):
+    """
+    Raised when a prompt is invalid or doesn't meet requirements.
+    
+    This includes prompts that are too long, empty, or contain
+    invalid characters.
+    Maps to HTTP 400 Bad Request.
+    """
+    pass

@@ -1,0 +1,183 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database for authentication and basic operations
+  postgres:
+    image: postgres:15-alpine
+    container_name: ai-agent-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: ai_admin
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d ai_admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-agent-network
+
+  # PostgreSQL with pgvector for vector database operations
+  postgres-vector:
+    image: ankane/pgvector:latest
+    container_name: ai-agent-postgres-vector
+    environment:
+      POSTGRES_USER: vector_admin
+      POSTGRES_PASSWORD: vector123
+      POSTGRES_DB: ai_agent_vectors
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_vector_data:/var/lib/postgresql/data
+      - ./backend/init-pgvector.sql:/docker-entrypoint-initdb.d/init-pgvector.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vector_admin -d ai_agent_vectors"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-agent-network
+
+  # Redis for caching (semantic cache and tool cache)
+  redis:
+    image: redis:7-alpine
+    container_name: ai-agent-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-agent-network
+
+  # FastAPI main application
+  fastapi-app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai-agent-fastapi
+    environment:
+      - APP_ENV=development
+      - APP_NAME=DeveloperDocAI
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8000
+      - DATABASE_URL=postgresql://admin:admin123@postgres:5432/ai_admin
+      - VECTOR_DATABASE_URL=postgresql://vector_admin:vector123@postgres-vector:5432/ai_agent_vectors
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-256-bit-secret-key-change-this-in-production}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - REFRESH_TOKEN_EXPIRE_DAYS=7
+      - PASSWORD_RESET_TOKEN_EXPIRE_HOURS=1
+      - BCRYPT_ROUNDS=12
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - SEMANTIC_CACHE_THRESHOLD=0.95
+      - SEMANTIC_CACHE_TTL=3600
+      - TOOL_CACHE_TTL=300
+      - MAX_WORKFLOW_ITERATIONS=3
+      - VECTOR_SEARCH_TOP_K=10
+      - VECTOR_SEARCH_MIN_SCORE=0.7
+      - CROSS_ENCODER_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
+      - EMBEDDING_MODEL=text-embedding-3-small
+      - EMBEDDING_DIMENSION=1536
+      - MCP_SERVICE_URL=http://mcp-tool:8001
+      - MCP_TOOL_RETRY_ATTEMPTS=3
+      - MCP_TOOL_RETRY_BACKOFF_MULTIPLIER=1
+      - MCP_TOOL_RETRY_MIN_WAIT=1
+      - MCP_TOOL_RETRY_MAX_WAIT=10
+      - OTEL_ENABLED=true
+      - OTEL_SERVICE_NAME=ai-agent-system
+      - OTEL_EXPORTER_TYPE=console
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/alembic:/app/alembic
+      - ./backend/alembic.ini:/app/alembic.ini
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-vector:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ai-agent-network
+    command: >
+      sh -c "
+        echo 'Waiting for databases to be ready...' &&
+        sleep 5 &&
+        echo 'Running database migrations...' &&
+        alembic upgrade head &&
+        echo 'Starting FastAPI application...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  # MCP Tool Service for documentation search
+  mcp-tool:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai-agent-mcp-tool
+    environment:
+      - APP_ENV=development
+      - APP_NAME=MCP-Documentation-Search
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8001
+      - VECTOR_DATABASE_URL=postgresql://vector_admin:vector123@postgres-vector:5432/ai_agent_vectors
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - REDIS_URL=redis://redis:6379/1
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=1
+      - TOOL_CACHE_TTL=300
+      - VECTOR_SEARCH_TOP_K=10
+      - VECTOR_SEARCH_MIN_SCORE=0.7
+      - CROSS_ENCODER_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
+      - EMBEDDING_MODEL=text-embedding-3-small
+      - EMBEDDING_DIMENSION=1536
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backend/app:/app/app
+    depends_on:
+      postgres-vector:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ai-agent-network
+    command: >
+      sh -c "
+        echo 'Starting MCP Tool Service...' &&
+        uvicorn app.mcp_server:app --host 0.0.0.0 --port 8001 --reload
+      "
+
+networks:
+  ai-agent-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  postgres_vector_data:
+    driver: local
+  redis_data:
+    driver: local

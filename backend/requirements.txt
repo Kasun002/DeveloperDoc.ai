@@ -19,8 +19,40 @@ passlib[bcrypt]
 python-jose[cryptography]
 bcrypt
 
-# AI/ML (placeholder, add as needed)
+# AI/ML and Agent Framework
 openai
+langgraph
+langchain
+langchain-openai
+
+# Vector Database and Embeddings
+pgvector
+asyncpg
+
+# Caching
+redis
+aioredis
+
+# Cross-encoder for re-ranking
+sentence-transformers
+
+# Retry and Circuit Breaker
+tenacity
+
+# Observability
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi
+opentelemetry-exporter-otlp-proto-grpc
+structlog
+
+# MCP Protocol (Model Context Protocol)
+# Note: Add MCP client library when available
+
+# Web Scraping (for documentation ingestion)
+aiohttp
+beautifulsoup4
+lxml
 
 # Testing
 pytest

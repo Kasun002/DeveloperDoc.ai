@@ -1,4 +1,5 @@
 services:
+  # PostgreSQL for basic operations (authentication, user management, etc.)
   postgres:
     image: postgres:15
     container_name: pg_local
@@ -10,7 +11,53 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d ai_admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dev_network
 
+  # PostgreSQL with pgvector for AI Agent vector operations
+  postgres_vector:
+    image: pgvector/pgvector:pg16
+    container_name: pg_vector_local
+    environment:
+      POSTGRES_USER: vector_admin
+      POSTGRES_PASSWORD: vector123
+      POSTGRES_DB: ai_agent_vectors
+    ports:
+      - "5433:5432"  # Different port to avoid conflict
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+      - ../backend/scripts/init_pgvector.sql:/docker-entrypoint-initdb.d/init_pgvector.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vector_admin -d ai_agent_vectors"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dev_network
+
+  # Redis for AI Agent caching (semantic cache + tool cache)
+  redis:
+    image: redis:7-alpine
+    container_name: redis_local
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dev_network
+
+  # PgAdmin for database management
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin_local
@@ -21,9 +68,22 @@ services:
       - "5050:80"
     depends_on:
       - postgres
+      - postgres_vector
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - dev_network
 
 volumes:
   pgdata:
+    driver: local
+  pgvector_data:
+    driver: local
+  redis_data:
+    driver: local
   pgadmin_data:
+    driver: local
+
+networks:
+  dev_network:
+    driver: bridge
