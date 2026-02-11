@@ -21,44 +21,44 @@ DeveloperDoc.ai is an intelligent code generation system that combines multi-age
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Frontend (React)                     │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐         │
-│  │   Login    │  │  Register  │  │    Chat    │         │
-│  └────────────┘  └────────────┘  └────────────┘         │
+│                    Frontend (React)                      │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐        │
+│  │   Login    │  │  Register  │  │    Chat    │        │
+│  └────────────┘  └────────────┘  └────────────┘        │
 └─────────────────────────────────────────────────────────┘
                           │
                           ▼ HTTP/REST API
 ┌─────────────────────────────────────────────────────────┐
-│                  Backend (FastAPI)                      │
-│                                                         │
-│  ┌────────────────────────────────────────────────┐     │
-│  │           Semantic Cache (Redis)               │     │
-│  │         Check for similar queries              │     │
-│  └────────────────────────────────────────────────┘     │
+│                  Backend (FastAPI)                       │
+│                                                          │
+│  ┌────────────────────────────────────────────────┐    │
+│  │           Semantic Cache (Redis)               │    │
+│  │         Check for similar queries              │    │
+│  └────────────────────────────────────────────────┘    │
 │                          │                              │
 │                          ▼                              │
-│  ┌────────────────────────────────────────────────┐     │
-│  │         LangGraph Workflow Engine              │     │
-│  │                                                │     │
-│  │  ┌──────────────────────────────────────┐      │     │
-│  │  │      Supervisor Agent (GPT-3.5)      │      │     │
-│  │  │   Analyzes prompt & routes request   │      │     │
-│  │  └──────────────────────────────────────┘      │     │
-│  │                    │                           │     │
-│  │         ┌──────────┴──────────┐                │     │
-│  │         ▼                     ▼                │     │
-│  │  ┌─────────────┐      ┌─────────────┐          │     │
-│  │  │   Search    │      │  Code Gen   │          │     │
-│  │  │   Agent     │      │   Agent     │          │     │
-│  │  │   (MCP)     │      │ (GPT-3.5)   │          │     │
-│  │  └─────────────┘      └─────────────┘          │     │
-│  └────────────────────────────────────────────────┘     │
+│  ┌────────────────────────────────────────────────┐    │
+│  │         LangGraph Workflow Engine              │    │
+│  │                                                 │    │
+│  │  ┌──────────────────────────────────────┐     │    │
+│  │  │      Supervisor Agent (GPT-3.5)      │     │    │
+│  │  │   Analyzes prompt & routes request   │     │    │
+│  │  └──────────────────────────────────────┘     │    │
+│  │                    │                           │    │
+│  │         ┌──────────┴──────────┐               │    │
+│  │         ▼                     ▼               │    │
+│  │  ┌─────────────┐      ┌─────────────┐        │    │
+│  │  │   Search    │      │  Code Gen   │        │    │
+│  │  │   Agent     │      │   Agent     │        │    │
+│  │  │   (MCP)     │      │ (GPT-3.5)   │        │    │
+│  │  └─────────────┘      └─────────────┘        │    │
+│  └────────────────────────────────────────────────┘    │
 │                          │                              │
 │                          ▼                              │
-│  ┌────────────────────────────────────────────────┐     │
-│  │         Vector Database (pgvector)             │     │
-│  │    Framework documentation embeddings          │     │
-│  └────────────────────────────────────────────────┘     │
+│  ┌────────────────────────────────────────────────┐    │
+│  │         Vector Database (pgvector)             │    │
+│  │    Framework documentation embeddings          │    │
+│  └────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -638,6 +638,15 @@ Restart backend.
 - [Full README](README.md) - Complete documentation
 - [Backend README](backend/README.md) - Backend details
 - [Frontend Toast Docs](frontend/TOAST_SETUP_COMPLETE.md) - Toast notifications
+
+**Specifications**:
+- [AI Agent Design](.kiro/specs/ai-agent/design.md)
+- [Gemini Integration](.kiro/specs/gemini-ai-integration/)
+
+**External Resources**:
+- [FastAPI Docs](https://fastapi.tiangolo.com/)
+- [React Docs](https://react.dev/)
+- [LangGraph Docs](https://langchain-ai.github.io/langgraph/)
 
 ---
 

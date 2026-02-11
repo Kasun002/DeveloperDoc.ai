@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { register as registerUser, storeTokens } from '../services/authService';
+import { showSuccess, showError } from '../utils/toast';
 
 interface RegisterFormProps {
   onSuccess: () => void;
@@ -24,11 +25,20 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
     try {
       const tokens = await registerUser(data);
       storeTokens(tokens);
+      
+      // Show success toast
+      showSuccess('Registration successful! Welcome to DeveloperDoc.ai');
+      
       onSuccess();
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Registration failed';
+      
+      // Show error toast
+      showError(errorMessage);
+      
       setFormError('root', {
         type: 'manual',
-        message: err instanceof Error ? err.message : 'Registration failed',
+        message: errorMessage,
       });
     }
   };

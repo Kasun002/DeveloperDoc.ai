@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { login, storeTokens } from '../services/authService';
+import { showSuccess, showError } from '../utils/toast';
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -24,11 +25,20 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
     try {
       const tokens = await login(data);
       storeTokens(tokens);
+      
+      // Show success toast
+      showSuccess('Login successful! Welcome back.');
+      
       onSuccess();
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      
+      // Show error toast
+      showError(errorMessage);
+      
       setFormError('root', {
         type: 'manual',
-        message: err instanceof Error ? err.message : 'Login failed',
+        message: errorMessage,
       });
     }
   };
