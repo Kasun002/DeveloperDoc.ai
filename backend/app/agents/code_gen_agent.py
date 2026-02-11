@@ -6,12 +6,13 @@ correct, framework-compliant code using LLM with optional documentation context.
 """
 
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from openai import AsyncOpenAI
 import openai
 
 from app.core.config import settings
+from app.services.gemini_client import GeminiClient
 from app.schemas.agent import CodeGenerationResult, DocumentationResult
 from app.utils.retry import llm_api_retry
 
@@ -34,7 +35,7 @@ class CodeGenAgent:
     
     def __init__(
         self,
-        client: Optional[AsyncOpenAI] = None,
+        client: Optional[Any] = None,
         model: str = "gpt-3.5-turbo",
         max_retries: int = 2
     ):
@@ -42,12 +43,20 @@ class CodeGenAgent:
         Initialize the Code Generation Agent.
         
         Args:
-            client: AsyncOpenAI client instance (creates new if None)
+            client: LLM client instance (creates new if None)
             model: LLM model name (default: gpt-3.5-turbo)
             max_retries: Maximum syntax validation retries (default: 2)
         """
-        self.client = client or AsyncOpenAI(api_key=settings.openai_api_key)
-        self.model = model
+        if client is None:
+            if settings.llm_provider == "gemini":
+                self.client = GeminiClient(api_key=settings.gemini_api_key)
+                self.model = "gemini-1.5-flash"
+            else:
+                self.client = AsyncOpenAI(api_key=settings.openai_api_key)
+                self.model = model
+        else:
+            self.client = client
+            self.model = model
         self.max_retries = max_retries
     
     async def generate_code(

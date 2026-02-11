@@ -7,7 +7,7 @@ Agent) based on the prompt's intent and requirements.
 """
 
 import uuid
-from typing import Optional
+from typing import Optional, Any
 
 from openai import AsyncOpenAI
 import openai
@@ -17,6 +17,7 @@ from app.core.logging_config import get_logger
 from app.core.telemetry import get_tracer, add_span_attributes
 from app.schemas.agent import AgentResponse, ResponseMetadata, RoutingStrategy
 from app.utils.retry import llm_api_retry
+from app.services.gemini_client import GeminiClient
 
 logger = get_logger(__name__)
 tracer = get_tracer(__name__)
@@ -38,18 +39,26 @@ class SupervisorAgent:
     
     def __init__(
         self,
-        client: Optional[AsyncOpenAI] = None,
+        client: Optional[Any] = None,
         model: str = "gpt-3.5-turbo"
     ):
         """
         Initialize the Supervisor Agent.
         
         Args:
-            client: AsyncOpenAI client instance (creates new if None)
-            model: LLM model name (default: gpt-3.5-turbo)
+            client: LLM client instance (creates new based on settings if None)
+            model: LLM model name (default: gpt-3.5-turbo for OpenAI, gemini-1.5-flash for Gemini)
         """
-        self.client = client or AsyncOpenAI(api_key=settings.openai_api_key)
-        self.model = model
+        if client is None:
+            if settings.llm_provider == "gemini":
+                self.client = GeminiClient(api_key=settings.gemini_api_key)
+                self.model = "gemini-1.5-flash"
+            else:
+                self.client = AsyncOpenAI(api_key=settings.openai_api_key)
+                self.model = model
+        else:
+            self.client = client
+            self.model = model
     
     async def analyze_and_route(
         self,

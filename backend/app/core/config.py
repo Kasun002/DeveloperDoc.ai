@@ -70,6 +70,10 @@ class Settings(BaseSettings):
     secret_key: str = ""  # General purpose secret key
     openai_api_key: str = ""  # OpenAI API key for AI features
     
+    # LLM Provider Configuration
+    llm_provider: str = "openai"  # "openai" or "gemini"
+    gemini_api_key: str = ""  # Only required if llm_provider="gemini"
+    
     # Redis Configuration (for caching)
     redis_url: str = "redis://localhost:6379/0"
     redis_host: str = "localhost"
@@ -143,10 +147,20 @@ class Settings(BaseSettings):
 
     @field_validator("openai_api_key")
     @classmethod
-    def validate_openai_api_key(cls, v: str) -> str:
-        """Validate that OpenAI API key is provided."""
-        if not v:
-            raise ValueError("OPENAI_API_KEY is required for AI agent functionality")
+    def validate_openai_api_key(cls, v: str, info) -> str:
+        """Validate that OpenAI API key is provided if using OpenAI"""
+        llm_provider = info.data.get("llm_provider", "openai")
+        if llm_provider == "openai" and not v:
+            raise ValueError("OPENAI_API_KEY is required when LLM_PROVIDER=openai")
+        return v
+
+    @field_validator("gemini_api_key")
+    @classmethod
+    def validate_gemini_api_key(cls, v: str, info) -> str:
+        """Validate that Gemini API key is provided if using Gemini"""
+        llm_provider = info.data.get("llm_provider", "openai")
+        if llm_provider == "gemini" and not v:
+            raise ValueError("GEMINI_API_KEY is required when LLM_PROVIDER=gemini")
         return v
 
     @field_validator("semantic_cache_threshold")
@@ -192,7 +206,12 @@ def validate_settings() -> None:
         _ = settings.database_url
         _ = settings.vector_database_url
         _ = settings.jwt_secret_key
-        _ = settings.openai_api_key
+        
+        # Validate LLM provider specific keys
+        if settings.llm_provider == "openai":
+            _ = settings.openai_api_key
+        elif settings.llm_provider == "gemini":
+            _ = settings.gemini_api_key
         
         print("✓ All required configuration validated successfully")
     except ValidationError as e:

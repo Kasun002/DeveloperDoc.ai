@@ -54,6 +54,13 @@
   - [Development Guide](#development-guide)
     - [Local Development Setup](#local-development-setup)
     - [Environment Variables](#environment-variables)
+  - [Switching to Gemini AI](#switching-to-gemini-ai)
+    - [Configuration](#configuration)
+    - [Using Gemini AI](#using-gemini-ai)
+    - [Switching Back to OpenAI](#switching-back-to-openai)
+    - [Provider Comparison](#provider-comparison)
+    - [Example Configuration](#example-configuration)
+    - [Notes](#notes)
     - [Development Workflow](#development-workflow)
       - [Making Code Changes](#making-code-changes)
       - [Adding Database Migrations](#adding-database-migrations)
@@ -941,6 +948,78 @@ OTEL_SERVICE_NAME=ai-agent-system
 LOG_LEVEL=INFO
 LOG_FORMAT=json
 ```
+
+## Switching to Gemini AI
+
+The application supports both OpenAI and Google Gemini AI as LLM providers. You can switch between them using a single environment variable.
+
+### Configuration
+
+Add these environment variables to your `.env` file:
+
+```env
+# LLM Provider Configuration
+LLM_PROVIDER=openai          # Options: "openai" or "gemini" (default: openai)
+GEMINI_API_KEY=              # Required only when LLM_PROVIDER=gemini
+```
+
+### Using Gemini AI
+
+1. **Get a Gemini API key**
+   - Visit https://makersuite.google.com/app/apikey
+   - Create a new API key
+
+2. **Update your `.env` file**
+   ```env
+   LLM_PROVIDER=gemini
+   GEMINI_API_KEY=your-actual-gemini-api-key-here
+   ```
+
+3. **Restart the application**
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+
+### Switching Back to OpenAI
+
+Simply change the provider in your `.env` file:
+
+```env
+LLM_PROVIDER=openai
+```
+
+No code changes required - the application automatically uses the configured provider.
+
+### Provider Comparison
+
+| Feature | OpenAI | Gemini |
+|---------|--------|--------|
+| Default Model | gpt-3.5-turbo | gemini-1.5-flash |
+| API Key Required | OPENAI_API_KEY | GEMINI_API_KEY |
+| Configuration | Default | Set LLM_PROVIDER=gemini |
+| Functionality | Full support | Full support |
+
+### Example Configuration
+
+**For OpenAI (default):**
+```env
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+```
+
+**For Gemini:**
+```env
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=AIza...
+```
+
+### Notes
+
+- The `LLM_PROVIDER` variable defaults to `openai` if not specified
+- When using Gemini, the `OPENAI_API_KEY` is not required
+- When using OpenAI, the `GEMINI_API_KEY` is not required
+- All existing features work with both providers
+- The switch is instant - just restart the application
 
 
 ### Development Workflow
