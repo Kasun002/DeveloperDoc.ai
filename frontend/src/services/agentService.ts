@@ -5,7 +5,7 @@
 import { getAccessToken } from './authService';
 
 // API base URL - should match backend
-const API_BASE_URL = 'http://localhost:5737/api/v1';
+const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 /**
  * Request interface for agent query

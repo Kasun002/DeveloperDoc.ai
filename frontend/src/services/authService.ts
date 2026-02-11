@@ -5,7 +5,7 @@
 import { setCookie, getCookie, deleteCookie } from '../utils/cookieUtils';
 
 // API base URL - should match backend
-const API_BASE_URL = 'http://localhost:5737/api/v1';
+const API_BASE_URL = 'http://localhost:8000/api';
 
 /**
  * Request interface for login

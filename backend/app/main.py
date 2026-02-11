@@ -133,47 +133,11 @@ async def lifespan(app: FastAPI):
 
 # Initialize FastAPI application
 app = FastAPI(
-    title="User Authentication Backend API",
-    description="""
-## JWT-based User Authentication System
-
-A secure, production-ready authentication backend built with FastAPI and PostgreSQL.
-
-### Features
-
-* **User Registration** - Create new user accounts with email and password
-* **User Login** - Authenticate and receive JWT tokens (access + refresh)
-* **Password Management** - Change password and reset forgotten passwords
-* **Token Refresh** - Obtain new access tokens without re-authentication
-* **Security** - Bcrypt password hashing, JWT tokens, comprehensive validation
-
-### Authentication
-
-Protected endpoints require a Bearer token in the Authorization header:
-
-```
-Authorization: Bearer <your_access_token>
-```
-
-Access tokens expire after 30 minutes. Use the refresh token to obtain a new access token.
-
-### Security Considerations
-
-* Passwords are hashed with bcrypt before storage
-* JWT tokens are signed with HS256/RS256
-* Password reset tokens expire after 1 hour
-* All sensitive operations require authentication
-    """,
+    title="DeveloperDoc.ai",
+    description="DeveloperDoc.ai Backend API",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    contact={
-        "name": "API Support",
-        "email": "support@example.com",
-    },
-    license_info={
-        "name": "MIT",
-    },
     lifespan=lifespan,
 )
 

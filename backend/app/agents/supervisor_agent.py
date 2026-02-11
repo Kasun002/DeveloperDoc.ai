@@ -33,20 +33,20 @@ class SupervisorAgent:
     
     Attributes:
         client: AsyncOpenAI client for LLM API calls
-        model: LLM model name (default: gpt-4)
+        model: LLM model name (default: gpt-3.5-turbo)
     """
     
     def __init__(
         self,
         client: Optional[AsyncOpenAI] = None,
-        model: str = "gpt-4"
+        model: str = "gpt-3.5-turbo"
     ):
         """
         Initialize the Supervisor Agent.
         
         Args:
             client: AsyncOpenAI client instance (creates new if None)
-            model: LLM model name (default: gpt-4)
+            model: LLM model name (default: gpt-3.5-turbo)
         """
         self.client = client or AsyncOpenAI(api_key=settings.openai_api_key)
         self.model = model

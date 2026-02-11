@@ -17,6 +17,7 @@ from app.core.telemetry import get_tracer, add_span_attributes
 from app.schemas.agent import AgentRequest, AgentResponse, ResponseMetadata
 from app.services.semantic_cache import semantic_cache
 from app.services.embedding_service import embedding_service
+from app.services.framework_detector import extract_context_from_prompt
 from app.workflows.agent_workflow import agent_workflow
 
 logger = get_logger(__name__)
@@ -112,13 +113,14 @@ async def query_agent(request: AgentRequest) -> AgentResponse:
     Process an AI agent query with semantic caching and workflow orchestration.
     
     This endpoint implements the complete agent query flow:
-    1. Semantic cache check (similarity threshold 0.95)
-    2. Supervisor agent routing
-    3. Specialized agent execution (search, code generation)
-    4. Response caching for future similar queries
+    1. Auto-detect framework and context from prompt (if not provided)
+    2. Semantic cache check (similarity threshold 0.95)
+    3. Supervisor agent routing
+    4. Specialized agent execution (search, code generation)
+    5. Response caching for future similar queries
     
     Args:
-        request: AgentRequest with prompt, optional context, and trace_id
+        request: AgentRequest with prompt (context auto-detected if not provided)
         
     Returns:
         AgentResponse: Result with comprehensive metadata
@@ -128,7 +130,24 @@ async def query_agent(request: AgentRequest) -> AgentResponse:
                       503 for service unavailable, 504 for timeouts
     """
     start_time = time.time()
+    
+    # Generate trace_id if not provided
     trace_id = request.trace_id or str(uuid.uuid4())
+    
+    # Set default max_iterations if not provided
+    max_iterations = request.max_iterations or 3
+    
+    # Auto-detect context from prompt if not provided
+    if not request.context:
+        detected_context = extract_context_from_prompt(request.prompt)
+        request.context = detected_context if detected_context else {}
+        
+        logger.info(
+            "context_auto_detected",
+            trace_id=trace_id,
+            detected_context=request.context,
+            prompt_preview=request.prompt[:100]
+        )
     
     # Start OpenTelemetry span
     with tracer.start_as_current_span("agent_query_endpoint") as span:
@@ -136,16 +155,17 @@ async def query_agent(request: AgentRequest) -> AgentResponse:
             span,
             trace_id=trace_id,
             prompt_length=len(request.prompt),
-            max_iterations=request.max_iterations,
-            has_context=bool(request.context)
+            max_iterations=max_iterations,
+            has_context=bool(request.context),
+            framework=request.context.get("framework", "unknown") if request.context else "unknown"
         )
         
         logger.info(
             "agent_query_received",
             trace_id=trace_id,
             prompt_length=len(request.prompt),
-            max_iterations=request.max_iterations,
-            has_context=bool(request.context)
+            max_iterations=max_iterations,
+            context=request.context
         )
         
         try:
@@ -227,7 +247,7 @@ async def query_agent(request: AgentRequest) -> AgentResponse:
                 prompt=request.prompt,
                 trace_id=trace_id,
                 context=request.context,
-                max_iterations=request.max_iterations
+                max_iterations=max_iterations
             )
             
             # Step 3: Cache the response for future queries

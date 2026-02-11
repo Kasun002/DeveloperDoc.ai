@@ -30,7 +30,9 @@ class RoutingStrategy(str, Enum):
 class AgentRequest(BaseModel):
     """Request schema for AI agent queries.
     
-    Validates incoming requests with prompt length constraints and optional context.
+    Validates incoming requests with prompt length constraints.
+    Context, trace_id, and max_iterations are automatically generated if not provided.
+    Framework is automatically detected from the prompt.
     """
     
     prompt: str = Field(
@@ -42,19 +44,19 @@ class AgentRequest(BaseModel):
     )
     context: Optional[Dict[str, Any]] = Field(
         default=None,
-        description="Optional context information for the request",
+        description="Optional context information (auto-detected if not provided)",
         examples=[{"framework": "NestJS", "language": "TypeScript"}]
     )
     trace_id: Optional[str] = Field(
-        default_factory=lambda: str(uuid.uuid4()),
-        description="Unique identifier for request tracing",
+        default=None,
+        description="Unique identifier for request tracing (auto-generated if not provided)",
         examples=["550e8400-e29b-41d4-a716-446655440000"]
     )
-    max_iterations: int = Field(
-        default=3,
+    max_iterations: Optional[int] = Field(
+        default=None,
         ge=1,
         le=10,
-        description="Maximum number of workflow iterations",
+        description="Maximum number of workflow iterations (defaults to 3)",
         examples=[3]
     )
     
@@ -62,10 +64,11 @@ class AgentRequest(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "prompt": "Create a NestJS controller for user authentication",
-                    "context": {"framework": "NestJS"},
-                    "trace_id": "550e8400-e29b-41d4-a716-446655440000",
-                    "max_iterations": 3
+                    "prompt": "Create a NestJS controller for user authentication"
+                },
+                {
+                    "prompt": "Build a React component for a login form",
+                    "max_iterations": 5
                 }
             ]
         }

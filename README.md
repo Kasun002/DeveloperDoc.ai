@@ -112,6 +112,7 @@
     - [Resource Usage](#resource-usage)
     - [Cost Estimation](#cost-estimation)
   - [Roadmap](#roadmap)
+    - [Recent Improvements ✨ (February 2026)](#recent-improvements--february-2026)
     - [Completed Features ✅](#completed-features-)
     - [Planned Features 🚀](#planned-features-)
       - [Short Term (Q1 2026)](#short-term-q1-2026)
@@ -119,6 +120,7 @@
       - [Long Term (Q3-Q4 2026)](#long-term-q3-q4-2026)
   - [Resources](#resources)
     - [Documentation](#documentation)
+    - [Recent Updates \& Changes](#recent-updates--changes)
     - [Implementation Summaries](#implementation-summaries)
     - [External Resources](#external-resources)
   - [FAQ](#faq)
@@ -135,6 +137,7 @@
     - [Feature Requests](#feature-requests)
   - [Contact](#contact)
   - [Status](#status)
+    - [Recent Updates (v1.1.0)](#recent-updates-v110)
     - [System Health](#system-health)
     - [Test Coverage](#test-coverage-1)
 
@@ -313,7 +316,7 @@ graph TB
 ### AI & ML
 - **LangGraph**: Agent workflow orchestration with cycles
 - **LangChain**: LLM integration and agent framework
-- **OpenAI API**: GPT models for code generation and routing
+- **OpenAI API**: GPT-3.5-turbo for code generation and routing (cost-optimized)
 - **sentence-transformers**: Cross-encoder for re-ranking
 - **text-embedding-3-small**: OpenAI embeddings (1536 dimensions)
 
@@ -440,7 +443,8 @@ developerdoc-ai/
 │   │   │   ├── semantic_cache.py     # Semantic caching
 │   │   │   ├── tool_cache.py         # Tool caching
 │   │   │   ├── vector_search_service.py  # Vector search
-│   │   │   └── reranking_service.py  # Cross-encoder re-ranking
+│   │   │   ├── reranking_service.py  # Cross-encoder re-ranking
+│   │   │   └── framework_detector.py # Framework auto-detection
 │   │   │
 │   │   ├── workflows/                # LangGraph workflows
 │   │   │   └── agent_workflow.py     # Agent workflow orchestration
@@ -490,6 +494,8 @@ developerdoc-ai/
 
 **Responsibility**: Prompt analysis and routing to specialized agents
 
+**Model**: GPT-3.5-turbo (cost-optimized, 60x cheaper than GPT-4)
+
 **Key Features**:
 - Analyzes incoming prompts using LLM
 - Determines routing strategy (SEARCH_ONLY, CODE_ONLY, SEARCH_THEN_CODE)
@@ -522,6 +528,8 @@ developerdoc-ai/
 ### 3. Code Generation Agent
 
 **Responsibility**: Generate syntactically correct, framework-compliant code
+
+**Model**: GPT-3.5-turbo (cost-optimized)
 
 **Key Features**:
 - Accepts documentation context from search agent
@@ -764,9 +772,16 @@ Login and get JWT tokens
 ### AI Agent Endpoints
 
 #### POST /api/v1/agent/query
-Query the AI Agent System
+Query the AI Agent System with automatic framework detection
 
-**Request**:
+**Simplified Request** (Recommended):
+```json
+{
+  "prompt": "Create a NestJS controller for user authentication"
+}
+```
+
+**Full Request** (Optional):
 ```json
 {
   "prompt": "Create a NestJS controller for user authentication",
@@ -777,6 +792,15 @@ Query the AI Agent System
   "max_iterations": 3
 }
 ```
+
+**Features**:
+- ✨ **Auto-Detection**: Framework and context automatically detected from prompt
+- ✨ **Simplified API**: Only `prompt` field required
+- ✨ **Backward Compatible**: Optional fields still supported
+- ✨ **Smart Defaults**: `trace_id` auto-generated, `max_iterations` defaults to 3
+
+**Supported Frameworks** (Auto-Detected):
+- NestJS, React, FastAPI, Django, Express, Vue, Angular, Spring Boot, .NET Core, Next.js, Flask
 
 **Response** (200):
 ```json
@@ -1552,20 +1576,34 @@ ervability**: Built-in support for tracing and logging
 
 ### Cost Estimation
 
-**OpenAI API Costs**:
+**OpenAI API Costs** (Updated with GPT-3.5-turbo):
 - Embeddings (text-embedding-3-small): $0.0001 per 1K tokens
-- GPT-4 (code generation): $0.03 per 1K tokens (input), $0.06 per 1K tokens (output)
-- Average query: ~$0.01-0.05
+- GPT-3.5-turbo (code generation): $0.0005 per 1K tokens (input), $0.0015 per 1K tokens (output)
+- Average query: ~$0.001-0.005 (60x cheaper than GPT-4!)
+
+**Cost Comparison**:
+- GPT-4: ~$0.01-0.05 per query
+- GPT-3.5-turbo: ~$0.001-0.005 per query
+- **Savings**: ~60x cost reduction
 
 **Infrastructure Costs** (AWS example):
 - RDS PostgreSQL (db.t3.medium): ~$50/month
 - ElastiCache Redis (cache.t3.micro): ~$15/month
 - ECS Fargate (2 vCPU, 4GB): ~$50/month
-- **Total**: ~$115/month + OpenAI API costs
+- **Total**: ~$115/month + OpenAI API costs (~$5-20/month for moderate usage)
 
 ---
 
 ## Roadmap
+
+### Recent Improvements ✨ (February 2026)
+
+- ✅ **Simplified API**: Only `prompt` field required, auto-detection of framework and context
+- ✅ **Framework Auto-Detection**: Automatically detects 11+ frameworks from natural language prompts
+- ✅ **Cost Optimization**: Migrated to GPT-3.5-turbo (60x cheaper than GPT-4)
+- ✅ **Smart Defaults**: Auto-generated trace IDs and sensible default values
+- ✅ **Backward Compatibility**: Existing API calls still work with optional parameters
+- ✅ **Enhanced Logging**: Context detection logged for debugging and monitoring
 
 ### Completed Features ✅
 
@@ -1614,6 +1652,11 @@ ervability**: Built-in support for tracing and logging
 - [Tasks](.kiro/specs/ai-agent/tasks.md) - Implementation tasks
 - [Docker Setup](DOCKER_SETUP.md) - Docker configuration guide
 - [Deployment Summary](DEPLOYMENT_SUMMARY.md) - Deployment details
+
+### Recent Updates & Changes
+- [API Changes Summary](backend/API_CHANGES_SUMMARY.md) - Simplified API with auto-detection
+- [Model Configuration](backend/MODEL_CONFIGURATION.md) - GPT-3.5-turbo migration guide
+- [Framework Detector](backend/app/services/framework_detector.py) - Auto-detection service
 
 ### Implementation Summaries
 - [Agent Endpoint Implementation](backend/AGENT_ENDPOINT_IMPLEMENTATION.md)
@@ -1670,13 +1713,16 @@ A: Add the framework to the documentation scraper, run the ingestion pipeline, a
 ### Cost Questions
 
 **Q: How much does it cost to run?**
-A: Infrastructure costs ~$115/month (AWS). OpenAI API costs depend on usage, typically $0.01-0.05 per query.
+A: Infrastructure costs ~$115/month (AWS). OpenAI API costs with GPT-3.5-turbo are ~$0.001-0.005 per query (60x cheaper than GPT-4), typically $5-20/month for moderate usage.
 
 **Q: How can I reduce costs?**
-A: Increase cache TTLs, use smaller models, implement request batching, and optimize prompts to reduce token usage.
+A: The system already uses GPT-3.5-turbo for cost optimization. Additional savings: increase cache TTLs, implement request batching, and optimize prompts to reduce token usage.
 
 **Q: Is there a free tier?**
-A: The system itself is open source. Costs come from infrastructure (can use free tiers) and OpenAI API (has free tier with limits).
+A: The system itself is open source. Costs come from infrastructure (can use free tiers) and OpenAI API (has free tier with limits). With GPT-3.5-turbo, costs are minimal for personal projects.
+
+**Q: What's the difference between GPT-4 and GPT-3.5-turbo?**
+A: GPT-3.5-turbo is 60x cheaper and faster, with very good code generation quality. GPT-4 offers superior reasoning for complex tasks but at higher cost. The system uses GPT-3.5-turbo by default for optimal cost/performance.
 
 
 ---
@@ -1765,16 +1811,25 @@ We welcome feature requests! Please:
 
 ## Status
 
-**Current Version**: 1.0.0  
+**Current Version**: 1.1.0  
 **Status**: Production Ready ✅  
-**Last Updated**: February 9, 2026
+**Last Updated**: February 11, 2026
+
+### Recent Updates (v1.1.0)
+
+- ✨ Simplified API with framework auto-detection
+- 💰 Cost optimization with GPT-3.5-turbo (60x cheaper)
+- 🎯 Smart defaults for trace_id and max_iterations
+- 🔍 Enhanced framework detection for 11+ frameworks
+- 📝 Comprehensive documentation updates
 
 ### System Health
 
 - ✅ Core AI Agent System: Operational
 - ✅ Authentication System: Operational
 - ✅ Documentation Search: Operational
-- ✅ Code Generation: Operational
+- ✅ Code Generation: Operational (GPT-3.5-turbo)
+- ✅ Framework Auto-Detection: Operational
 - ✅ Caching Layer: Operational
 - ✅ Observability: Operational
 

@@ -28,14 +28,14 @@ class CodeGenAgent:
     
     Attributes:
         client: AsyncOpenAI client for LLM API calls
-        model: LLM model name (default: gpt-4)
+        model: LLM model name (default: gpt-3.5-turbo)
         max_retries: Maximum number of syntax validation retries
     """
     
     def __init__(
         self,
         client: Optional[AsyncOpenAI] = None,
-        model: str = "gpt-4",
+        model: str = "gpt-3.5-turbo",
         max_retries: int = 2
     ):
         """
@@ -43,7 +43,7 @@ class CodeGenAgent:
         
         Args:
             client: AsyncOpenAI client instance (creates new if None)
-            model: LLM model name (default: gpt-4)
+            model: LLM model name (default: gpt-3.5-turbo)
             max_retries: Maximum syntax validation retries (default: 2)
         """
         self.client = client or AsyncOpenAI(api_key=settings.openai_api_key)
