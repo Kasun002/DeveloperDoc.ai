@@ -31,48 +31,33 @@ const ChatInterface: React.FC = () => {
   const queryValue = watch('query');
 
   const onSubmit = async (data: QueryFormData) => {
-    // Clear previous error and response
     setError(null);
     setResponse(null);
-
-    // Show loading toast
     const loadingToastId = showLoading('Submitting your query...');
 
     try {
       const result = await submitQuery(data.query);
-      
-      // Dismiss loading toast
       dismissToast(loadingToastId);
-      
-      // Show success toast
       showSuccess('Query submitted successfully!');
       
       setResponse(result.response);
-      reset(); // Clear the form after successful submission
+      reset();
     } catch (err) {
-      // Dismiss loading toast
       dismissToast(loadingToastId);
-      
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      
-      // Handle token expiration
       if (errorMessage === 'SESSION_EXPIRED') {
         showError('Your session has expired. Please login again.');
         clearTokens();
         navigate('/login');
         return;
       }
-      
-      // Show error toast
       showError(errorMessage || 'Failed to submit query. Please try again.');
-      
       setError(errorMessage);
     }
   };
 
   return (
     <div className="flex flex-col h-full max-h-screen">
-      {/* Query Input Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="mb-4 sm:mb-6">
         <div className="flex flex-col sm:flex-row gap-2">
           <input

@@ -1,2 +1,7 @@
 .kiro
 .vscode
+.hypothesis
+test_health.db
+
+*.md
+!README.md

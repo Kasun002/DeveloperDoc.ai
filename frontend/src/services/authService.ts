@@ -60,7 +60,6 @@ export async function login(credentials: LoginRequest): Promise<TokenResponse> {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      // Handle specific HTTP status codes
       if (response.status === 401) {
         throw new Error('Invalid credentials. Please try again.');
       }
@@ -77,7 +76,6 @@ export async function login(credentials: LoginRequest): Promise<TokenResponse> {
     const data: TokenResponse = await response.json();
     return data;
   } catch (err) {
-    // Handle network errors and timeouts
     if (err instanceof Error) {
       if (err.name === 'AbortError') {
         throw new Error('Request timed out. Please try again.');
@@ -112,7 +110,6 @@ export async function register(userData: RegisterRequest): Promise<TokenResponse
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      // Handle specific HTTP status codes
       if (response.status === 401) {
         throw new Error('Invalid credentials. Please try again.');
       }
@@ -129,7 +126,6 @@ export async function register(userData: RegisterRequest): Promise<TokenResponse
     const data: TokenResponse = await response.json();
     return data;
   } catch (err) {
-    // Handle network errors and timeouts
     if (err instanceof Error) {
       if (err.name === 'AbortError') {
         throw new Error('Request timed out. Please try again.');
@@ -147,17 +143,12 @@ export async function register(userData: RegisterRequest): Promise<TokenResponse
  * Store authentication tokens in cookies
  */
 export function storeTokens(tokens: TokenResponse): void {
-  // Determine if we're in production (HTTPS)
   const isProduction = window.location.protocol === 'https:';
-
-  // Store access token
   setCookie('access_token', tokens.access_token, {
     path: '/',
     secure: isProduction,
     sameSite: 'Lax',
   });
-
-  // Store refresh token
   setCookie('refresh_token', tokens.refresh_token, {
     path: '/',
     secure: isProduction,
