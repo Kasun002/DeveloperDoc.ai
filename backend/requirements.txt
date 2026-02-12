@@ -12,6 +12,7 @@ email-validator
 sqlalchemy
 psycopg2-binary
 alembic
+greenlet  # Required for SQLAlchemy async operations
 
 # Security
 authlib

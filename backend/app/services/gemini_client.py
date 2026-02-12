@@ -15,7 +15,7 @@ Usage:
     >>> 
     >>> # Use exactly like AsyncOpenAI
     >>> response = await client.chat.completions.create(
-    ...     model="gemini-1.5-flash",
+    ...     model="gemini-2.0-flash",
     ...     messages=[
     ...         {"role": "system", "content": "You are a helpful assistant"},
     ...         {"role": "user", "content": "Write a hello world function"}
@@ -73,7 +73,7 @@ class GeminiClient:
         
         >>> client = GeminiClient(api_key="your-api-key")
         >>> response = await client.chat.completions.create(
-        ...     model="gemini-1.5-flash",
+        ...     model="gemini-2.0-flash",
         ...     messages=[{"role": "user", "content": "Hello"}]
         ... )
         >>> print(response.choices[0].message.content)
@@ -87,7 +87,7 @@ class GeminiClient:
         ...     {"role": "user", "content": "Add error handling"}
         ... ]
         >>> response = await client.chat.completions.create(
-        ...     model="gemini-1.5-flash",
+        ...     model="gemini-2.0-flash",
         ...     messages=messages,
         ...     temperature=0.7
         ... )
@@ -136,7 +136,7 @@ class Completions:
     
     async def create(
         self,
-        model: str = "gemini-1.5-flash",
+        model: str = "gemini-2.0-flash",
         messages: List[Dict[str, str]] = None,
         temperature: float = 0.2,
         max_tokens: int = 2000,
@@ -148,8 +148,8 @@ class Completions:
         allowing for seamless switching between providers.
         
         Args:
-            model (str, optional): Gemini model name. Defaults to "gemini-1.5-flash".
-                Available models: gemini-1.5-flash, gemini-1.5-pro
+            model (str, optional): Gemini model name. Defaults to "gemini-2.0-flash".
+                Available models: gemini-2.0-flash, gemini-2.5-flash, gemini-2.5-pro
             messages (List[Dict[str, str]], optional): List of message dictionaries.
                 Each message should have 'role' and 'content' keys.
                 Supported roles: 'system', 'user', 'assistant'
@@ -187,7 +187,7 @@ class Completions:
             With custom parameters:
             
             >>> response = await client.chat.completions.create(
-            ...     model="gemini-1.5-flash",
+            ...     model="gemini-2.0-flash",
             ...     messages=[
             ...         {"role": "system", "content": "Be concise"},
             ...         {"role": "user", "content": "Explain Python"}

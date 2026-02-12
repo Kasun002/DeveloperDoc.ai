@@ -50,7 +50,7 @@ class CodeGenAgent:
         if client is None:
             if settings.llm_provider == "gemini":
                 self.client = GeminiClient(api_key=settings.gemini_api_key)
-                self.model = "gemini-1.5-flash"
+                self.model = "gemini-2.0-flash"
             else:
                 self.client = AsyncOpenAI(api_key=settings.openai_api_key)
                 self.model = model

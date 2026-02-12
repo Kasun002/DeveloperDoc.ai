@@ -28,7 +28,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from app.core.config import settings
 from app.models.framework_documentation import FrameworkDocumentation
-from app.services.embedding_service import EmbeddingService
+# Use local embedding service to avoid OpenAI quota issues
+from app.services.local_embedding_service import LocalEmbeddingService as EmbeddingService
 
 
 class DocumentationIngestionPipeline:
@@ -42,7 +43,12 @@ class DocumentationIngestionPipeline:
             batch_size: Number of documents to process in each batch
         """
         self.batch_size = batch_size
-        self.embedding_service = EmbeddingService()
+        # Use local embedding service (384 dimensions, no API needed)
+        print("Initializing local embedding service (no API key required)...")
+        self.embedding_service = EmbeddingService(
+            model_name="all-MiniLM-L6-v2",  # Fast, free, local model
+            dimension=384  # Smaller dimension, but works great
+        )
         
         # Create async engine for vector database
         if not settings.vector_database_url:

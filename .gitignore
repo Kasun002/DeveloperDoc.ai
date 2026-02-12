@@ -5,3 +5,5 @@ test_health.db
 
 *.md
 !README.md
+backend/docs/scraped/
+backend/backend.log*

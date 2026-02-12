@@ -39,7 +39,7 @@ class FrameworkDocumentation(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     content = Column(Text, nullable=False)
-    embedding = Column(Vector(1536), nullable=False, comment="text-embedding-3-small dimension")
+    embedding = Column(Vector(384), nullable=False, comment="all-MiniLM-L6-v2 dimension (local embeddings)")
     doc_metadata = Column(JSONB, nullable=False, server_default="{}", name="metadata")
     source = Column(String(500), nullable=False, comment="URL or file path")
     framework = Column(String(100), nullable=False, comment="NestJS, React, FastAPI, etc.")

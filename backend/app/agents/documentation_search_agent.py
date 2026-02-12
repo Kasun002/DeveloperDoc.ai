@@ -36,26 +36,26 @@ class DocumentationSearchAgent:
     
     def __init__(
         self,
-        vector_search_service: Optional[VectorSearchService] = None,
-        reranking_service: Optional[RerankingService] = None,
-        embedding_service: Optional[EmbeddingService] = None,
-        tool_cache: Optional[ToolCache] = None,
+        vector_search_service_instance: Optional[VectorSearchService] = None,
+        reranking_service_instance: Optional[RerankingService] = None,
+        embedding_service_instance: Optional[EmbeddingService] = None,
+        tool_cache_instance: Optional[ToolCache] = None,
         self_correction_threshold: float = 0.7
     ):
         """
         Initialize the Documentation Search Agent.
         
         Args:
-            vector_search_service: Vector search service instance
-            reranking_service: Re-ranking service instance
-            embedding_service: Embedding service instance
-            tool_cache: Tool cache instance for caching search results
+            vector_search_service_instance: Vector search service instance
+            reranking_service_instance: Re-ranking service instance
+            embedding_service_instance: Embedding service instance
+            tool_cache_instance: Tool cache instance for caching search results
             self_correction_threshold: Threshold for triggering self-correction (default: 0.7)
         """
-        self.vector_search_service = vector_search_service or vector_search_service
-        self.reranking_service = reranking_service or reranking_service
-        self.embedding_service = embedding_service or embedding_service
-        self.tool_cache = tool_cache or tool_cache
+        self.vector_search_service = vector_search_service_instance or vector_search_service
+        self.reranking_service = reranking_service_instance or reranking_service
+        self.embedding_service = embedding_service_instance or embedding_service
+        self.tool_cache = tool_cache_instance or tool_cache
         self.self_correction_threshold = self_correction_threshold
     
     async def search_docs(

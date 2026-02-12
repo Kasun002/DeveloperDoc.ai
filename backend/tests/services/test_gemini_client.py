@@ -68,7 +68,7 @@ class TestGeminiClient:
         
         with patch('aiohttp.ClientSession', return_value=mock_session):
             response = await client.chat.completions.create(
-                model="gemini-1.5-flash",
+                model="gemini-2.0-flash",
                 messages=[{"role": "user", "content": "Hello"}]
             )
             

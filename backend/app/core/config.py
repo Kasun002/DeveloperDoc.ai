@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     
     # LLM Provider Configuration
     llm_provider: str = "openai"  # "openai" or "gemini"
-    gemini_api_key: str = ""  # Only required if llm_provider="gemini"
+    gemini_api_key: str = "AIzaSyAFbVLAWL63zoNlzgLOkJrgqhcC7nsZMBs"  # Only required if llm_provider="gemini"
     
     # Redis Configuration (for caching)
     redis_url: str = "redis://localhost:6379/0"

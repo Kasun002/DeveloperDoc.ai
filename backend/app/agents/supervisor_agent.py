@@ -47,12 +47,12 @@ class SupervisorAgent:
         
         Args:
             client: LLM client instance (creates new based on settings if None)
-            model: LLM model name (default: gpt-3.5-turbo for OpenAI, gemini-1.5-flash for Gemini)
+            model: LLM model name (default: gpt-3.5-turbo for OpenAI, gemini-2.0-flash for Gemini)
         """
         if client is None:
             if settings.llm_provider == "gemini":
                 self.client = GeminiClient(api_key=settings.gemini_api_key)
-                self.model = "gemini-1.5-flash"
+                self.model = "gemini-2.0-flash"
             else:
                 self.client = AsyncOpenAI(api_key=settings.openai_api_key)
                 self.model = model

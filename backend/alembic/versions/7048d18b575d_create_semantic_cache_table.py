@@ -21,12 +21,13 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     """Upgrade schema."""
     # Create semantic_cache table for similarity-based cache lookups
+    # Using 384 dimensions for local embeddings (all-MiniLM-L6-v2)
     op.execute("""
         CREATE TABLE IF NOT EXISTS semantic_cache (
             id SERIAL PRIMARY KEY,
             prompt TEXT NOT NULL UNIQUE,
             response TEXT NOT NULL,
-            embedding vector(1536) NOT NULL,
+            embedding vector(384) NOT NULL,
             cached_at TIMESTAMP NOT NULL DEFAULT NOW(),
             ttl INTEGER NOT NULL DEFAULT 3600,
             created_at TIMESTAMP DEFAULT NOW(),

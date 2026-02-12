@@ -10,7 +10,7 @@ from typing import List, Optional
 
 from app.core.vector_database import VectorDatabaseManager, vector_db_manager
 from app.schemas.agent import DocumentationResult
-from app.services.embedding_service import EmbeddingService, embedding_service
+from app.services.local_embedding_service import LocalEmbeddingService, get_local_embedding_service
 
 
 class VectorSearchService:
@@ -29,17 +29,20 @@ class VectorSearchService:
     def __init__(
         self,
         db_manager: Optional[VectorDatabaseManager] = None,
-        embedding_service: Optional[EmbeddingService] = None
+        embedding_service: Optional[LocalEmbeddingService] = None
     ):
         """
         Initialize the Vector Search Service.
         
         Args:
             db_manager: Vector database manager. If None, uses global instance.
-            embedding_service: Embedding service. If None, uses global instance.
+            embedding_service: Local embedding service. If None, creates new instance.
         """
         self.db_manager = db_manager or vector_db_manager
-        self.embedding_service = embedding_service or embedding_service
+        self.embedding_service = embedding_service or get_local_embedding_service(
+            model_name="all-MiniLM-L6-v2",
+            dimension=384
+        )
     
     async def search_documentation(
         self,

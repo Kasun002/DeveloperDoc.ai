@@ -28,8 +28,9 @@ from app.core.database import Base
 config = context.config
 
 # Set the database URL from application settings
-# This ensures migrations use the same database as the application
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# Use vector database URL for migrations since framework_documentation
+# and semantic_cache tables use pgvector extension
+config.set_main_option("sqlalchemy.url", settings.vector_database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

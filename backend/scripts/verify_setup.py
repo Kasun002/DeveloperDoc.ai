@@ -80,17 +80,32 @@ def check_postgresql():
         
         load_dotenv()
         database_url = os.getenv("DATABASE_URL")
+        vector_database_url = os.getenv("VECTOR_DATABASE_URL")
         
         if not database_url:
             print("❌ DATABASE_URL not set")
             return False
         
+        # Check main database
         engine = create_engine(database_url)
         
-        # Test connection
         with engine.connect() as conn:
             result = conn.execute(text("SELECT 1"))
-            print("✓ PostgreSQL connection successful")
+            print("✓ PostgreSQL main database connection successful")
+        
+        engine.dispose()
+        
+        # Check vector database with pgvector
+        if not vector_database_url:
+            print("⚠ VECTOR_DATABASE_URL not set - skipping pgvector check")
+            print("\n✅ PostgreSQL check passed (main database only)")
+            return True
+        
+        vector_engine = create_engine(vector_database_url)
+        
+        with vector_engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            print("✓ PostgreSQL vector database connection successful")
             
             # Check pgvector extension
             result = conn.execute(
@@ -101,8 +116,9 @@ def check_postgresql():
             if row:
                 print(f"✓ pgvector extension installed (version {row[1]})")
             else:
-                print("✗ pgvector extension NOT installed")
-                print("  Run: CREATE EXTENSION vector; in PostgreSQL")
+                print("✗ pgvector extension NOT installed in vector database")
+                print("  Run: CREATE EXTENSION vector; in the vector database")
+                vector_engine.dispose()
                 return False
             
             # Check if we can create a vector column (test)
@@ -111,9 +127,10 @@ def check_postgresql():
                 print("✓ Vector type working correctly")
             except Exception as e:
                 print(f"✗ Vector type test failed: {e}")
+                vector_engine.dispose()
                 return False
         
-        engine.dispose()
+        vector_engine.dispose()
         print("\n✅ PostgreSQL check passed")
         return True
         
@@ -123,7 +140,7 @@ def check_postgresql():
         return False
     except Exception as e:
         print(f"❌ PostgreSQL connection failed: {e}")
-        print("  Make sure PostgreSQL is running: docker-compose up -d postgres")
+        print("  Make sure PostgreSQL is running: docker-compose up -d")
         return False
 
 

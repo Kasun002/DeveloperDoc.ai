@@ -50,21 +50,21 @@ class AgentWorkflow:
     
     def __init__(
         self,
-        supervisor: Optional[SupervisorAgent] = None,
-        search_agent: Optional[DocumentationSearchAgent] = None,
-        code_gen_agent: Optional[CodeGenAgent] = None,
+        supervisor_instance: Optional[SupervisorAgent] = None,
+        search_agent_instance: Optional[DocumentationSearchAgent] = None,
+        code_gen_agent_instance: Optional[CodeGenAgent] = None,
     ):
         """
         Initialize the agent workflow.
         
         Args:
-            supervisor: Supervisor agent instance
-            search_agent: Documentation search agent instance
-            code_gen_agent: Code generation agent instance
+            supervisor_instance: Supervisor agent instance
+            search_agent_instance: Documentation search agent instance
+            code_gen_agent_instance: Code generation agent instance
         """
-        self.supervisor = supervisor or supervisor_agent
-        self.search_agent = search_agent or documentation_search_agent
-        self.code_gen_agent = code_gen_agent or code_gen_agent
+        self.supervisor = supervisor_instance or supervisor_agent
+        self.search_agent = search_agent_instance or documentation_search_agent
+        self.code_gen_agent = code_gen_agent_instance or code_gen_agent
         
         # Build the workflow graph
         self.graph = self._build_graph()

@@ -2,6 +2,21 @@
 
 > AI-powered code generation with framework documentation search
 
+---
+
+## 🎉 NEW: Migration to Local Embeddings Complete!
+
+**No more OpenAI quota errors!** The system now uses:
+- ✅ **Local embeddings** (sentence-transformers) - FREE, unlimited, no API key
+- ✅ **Gemini** for LLM operations - Better performance, lower cost
+- ✅ **Automated migration** - Just run `./start_all.sh --clean`
+
+**Quick Start**: `./start_all.sh --clean`
+
+📚 **Migration Docs**: See `README_MIGRATION.md` for complete details
+
+---
+
 ## Overview
 
 DeveloperDoc.ai is an intelligent code generation system that combines multi-agent AI architecture with semantic documentation search. It helps developers generate framework-compliant code by automatically searching relevant documentation and applying best practices.
