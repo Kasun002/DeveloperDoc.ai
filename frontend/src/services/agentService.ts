@@ -11,7 +11,7 @@ const API_BASE_URL = 'http://localhost:8000/api/v1';
  * Request interface for agent query
  */
 export interface QueryRequest {
-  query: string;
+  prompt: string;
 }
 
 /**
@@ -19,6 +19,7 @@ export interface QueryRequest {
  */
 export interface QueryResponse {
   response: string;
+  result?: string;
 }
 
 /**
@@ -34,12 +35,12 @@ interface ErrorResponse {
  * @returns The agent's response in markdown format
  * @throws Error if query submission fails or user is not authenticated
  */
-export async function submitQuery(query: string): Promise<QueryResponse> {
+export async function submitQuery(prompt: string): Promise<QueryResponse> {
   const accessToken = getAccessToken();
   if (!accessToken) {
     throw new Error('Not authenticated. Please log in.');
   }
-  const requestBody: QueryRequest = { query };
+  const requestBody: QueryRequest = { prompt };
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for queries

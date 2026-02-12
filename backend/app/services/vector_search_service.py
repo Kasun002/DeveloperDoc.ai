@@ -94,15 +94,15 @@ class VectorSearchService:
         # Generate query embedding
         query_embedding = await self.embedding_service.embed_query(query)
         
+        # Convert embedding to string for pgvector compatibility
+        embedding_str = '[' + ','.join(str(x) for x in query_embedding) + ']'
         # Build SQL query with framework filtering
         if frameworks:
-            # Filter by specific frameworks
             framework_filter = "AND framework = ANY($3)"
-            params = [query_embedding, top_k, frameworks]
+            params = [embedding_str, top_k, frameworks]
         else:
-            # No framework filter
             framework_filter = ""
-            params = [query_embedding, top_k]
+            params = [embedding_str, top_k]
         
         # Vector search query using cosine similarity
         # Note: <=> is the cosine distance operator in pgvector

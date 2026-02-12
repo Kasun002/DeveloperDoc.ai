@@ -427,7 +427,7 @@ setup_backend() {
         else
             print_warning "Migration may not have completed. Current dimension: $new_dim"
         fi
-    elif [ "$current_dim" = "388" ]; then
+    elif [ "$current_dim" = "384" ]; then
         print_success "Already using local embeddings (384-dim)"
     else
         print_warning "Could not determine embedding dimension (may be first run)"

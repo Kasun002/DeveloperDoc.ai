@@ -7,7 +7,7 @@ import MarkdownRenderer from './MarkdownRenderer';
 import { showSuccess, showError, showLoading, dismissToast } from '../utils/toast';
 
 interface QueryFormData {
-  query: string;
+  prompt: string;
 }
 
 const ChatInterface: React.FC = () => {
@@ -24,11 +24,11 @@ const ChatInterface: React.FC = () => {
   } = useForm<QueryFormData>({
     mode: 'onSubmit',
     defaultValues: {
-      query: '',
+      prompt: '',
     },
   });
 
-  const queryValue = watch('query');
+  const queryValue = watch('prompt');
 
   const onSubmit = async (data: QueryFormData) => {
     setError(null);
@@ -36,11 +36,11 @@ const ChatInterface: React.FC = () => {
     const loadingToastId = showLoading('Submitting your query...');
 
     try {
-      const result = await submitQuery(data.query);
+      const result = await submitQuery(data.prompt);
       dismissToast(loadingToastId);
       showSuccess('Query submitted successfully!');
       
-      setResponse(result.response);
+      setResponse(result.result ?? '');
       reset();
     } catch (err) {
       dismissToast(loadingToastId);
@@ -62,7 +62,7 @@ const ChatInterface: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
-            {...register('query', {
+            {...register('prompt', {
               required: true,
               validate: (value) => value.trim().length > 0,
             })}
@@ -72,7 +72,7 @@ const ChatInterface: React.FC = () => {
           />
           <button
             type="submit"
-            disabled={isSubmitting || !queryValue?.trim()}
+            disabled={isSubmitting || !queryValue}
             className="px-6 py-2 sm:px-8 sm:py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none transition-all duration-200 whitespace-nowrap font-semibold"
           >
             {isSubmitting ? 'Sending...' : 'Send'}

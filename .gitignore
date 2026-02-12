@@ -7,3 +7,4 @@ test_health.db
 !README.md
 backend/docs/scraped/
 backend/backend.log*
+backend/backend.pid
