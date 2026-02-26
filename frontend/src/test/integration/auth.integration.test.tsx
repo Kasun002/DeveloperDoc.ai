@@ -101,7 +101,7 @@ describe('Register flow', () => {
     expect(screen.getByRole('heading', { name: /create your account/i })).toBeInTheDocument()
   })
 
-  it('navigates to /chat after successful registration', async () => {
+  it('redirects to /login after successful registration', async () => {
     renderAt('/register')
 
     await userEvent.type(screen.getByLabelText(/email/i), 'newuser@example.com')
@@ -109,11 +109,13 @@ describe('Register flow', () => {
     await userEvent.click(screen.getByRole('button', { name: /^register$/i }))
 
     await waitFor(() =>
-      expect(screen.getByAltText('DeveloperDoc.ai Logo')).toBeInTheDocument()
+      expect(
+        screen.getByRole('heading', { name: /sign in to your account/i })
+      ).toBeInTheDocument()
     )
   })
 
-  it('stores tokens in cookies after successful registration', async () => {
+  it('does not store tokens in cookies after registration', async () => {
     renderAt('/register')
 
     await userEvent.type(screen.getByLabelText(/email/i), 'newuser@example.com')
@@ -121,8 +123,9 @@ describe('Register flow', () => {
     await userEvent.click(screen.getByRole('button', { name: /^register$/i }))
 
     await waitFor(() =>
-      expect(document.cookie).toContain('access_token=valid-token')
+      screen.getByRole('heading', { name: /sign in to your account/i })
     )
+    expect(document.cookie).not.toContain('access_token')
   })
 
   it('shows an error for an already-registered email', async () => {

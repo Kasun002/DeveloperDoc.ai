@@ -5,7 +5,7 @@ const RegisterPage = () => {
   const navigate = useNavigate();
 
   const handleRegisterSuccess = () => {
-    navigate("/chat");
+    navigate("/login");
   };
 
   return (

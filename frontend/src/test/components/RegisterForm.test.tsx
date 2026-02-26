@@ -8,6 +8,7 @@ vi.mock('../../utils/toast')
 
 import { register as registerUser, storeTokens } from '../../services/authService'
 import { showSuccess, showError } from '../../utils/toast'
+// storeTokens must NOT be called after registration (user is redirected to /login)
 
 describe('RegisterForm', () => {
   const onSuccess = vi.fn()
@@ -99,19 +100,23 @@ describe('RegisterForm', () => {
       )
     })
 
-    it('calls storeTokens with the returned tokens', async () => {
-      const tokens = { access_token: 'at', refresh_token: 'rt', token_type: 'bearer' }
-      vi.mocked(registerUser).mockResolvedValueOnce(tokens)
+    it('does NOT call storeTokens after registration', async () => {
+      vi.mocked(registerUser).mockResolvedValueOnce({
+        access_token: 'at',
+        refresh_token: 'rt',
+        token_type: 'bearer',
+      })
 
       render(<RegisterForm onSuccess={onSuccess} />)
       await userEvent.type(screen.getByLabelText(/email/i), 'new@test.com')
       await userEvent.type(screen.getByLabelText(/password/i), 'mypassword')
       await userEvent.click(screen.getByRole('button', { name: /^register$/i }))
 
-      await waitFor(() => expect(storeTokens).toHaveBeenCalledWith(tokens))
+      await waitFor(() => expect(onSuccess).toHaveBeenCalled())
+      expect(storeTokens).not.toHaveBeenCalled()
     })
 
-    it('calls showSuccess with the welcome message', async () => {
+    it('calls showSuccess with the sign-in prompt message', async () => {
       vi.mocked(registerUser).mockResolvedValueOnce({
         access_token: 'at',
         refresh_token: 'rt',
@@ -124,9 +129,7 @@ describe('RegisterForm', () => {
       await userEvent.click(screen.getByRole('button', { name: /^register$/i }))
 
       await waitFor(() =>
-        expect(showSuccess).toHaveBeenCalledWith(
-          'Registration successful! Welcome to DeveloperDoc.ai'
-        )
+        expect(showSuccess).toHaveBeenCalledWith('Registration successful! Please sign in.')
       )
     })
 

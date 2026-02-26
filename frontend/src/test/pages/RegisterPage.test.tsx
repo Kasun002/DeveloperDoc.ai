@@ -62,10 +62,10 @@ describe('RegisterPage', () => {
   // ─── Navigation ──────────────────────────────────────────────────────────────
 
   describe('navigation', () => {
-    it('navigates to /chat when RegisterForm calls onSuccess', async () => {
+    it('navigates to /login when RegisterForm calls onSuccess', async () => {
       renderPage()
       await userEvent.click(screen.getByTestId('mock-register-form'))
-      expect(mockNavigate).toHaveBeenCalledWith('/chat')
+      expect(mockNavigate).toHaveBeenCalledWith('/login')
     })
   })
 })
