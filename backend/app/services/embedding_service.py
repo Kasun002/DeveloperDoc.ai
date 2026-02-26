@@ -6,6 +6,8 @@ using OpenAI's text-embedding-3-small model. Includes error handling, rate limit
 and retry logic.
 """
 
+import asyncio
+import logging
 from typing import List, Optional
 
 from app.core.config import settings
@@ -15,7 +17,14 @@ from tenacity import (
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
+    wait_random_exponential,
 )
+
+logger = logging.getLogger(__name__)
+
+# Maximum number of texts sent to OpenAI in a single embed_batch call.
+# Keeping this small avoids hitting per-minute token rate limits.
+_BATCH_CHUNK_SIZE = 20
 
 
 class EmbeddingService:
@@ -36,7 +45,7 @@ class EmbeddingService:
         self,
         api_key: Optional[str] = None,
         model: str = "text-embedding-3-small",
-        dimension: int = 1536
+        dimension: int = settings.embedding_dimension
     ):
         """
         Initialize the Embedding Service.
@@ -51,10 +60,19 @@ class EmbeddingService:
         self.dimension = dimension
     
     @retry(
-        retry=retry_if_exception_type((RateLimitError, OpenAIError)),
+        retry=retry_if_exception_type(RateLimitError),
+        stop=stop_after_attempt(4),
+        # For rate-limit errors use a randomized exponential back-off starting
+        # at 10 s and capping at 90 s.  OpenAI rate-limit windows are typically
+        # 60 s, so waiting at least that long before retrying is important.
+        wait=wait_random_exponential(multiplier=2, min=10, max=90),
+        reraise=True,
+    )
+    @retry(
+        retry=retry_if_exception_type(OpenAIError),
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
-        reraise=True
+        reraise=True,
     )
     async def embed_text(self, text: str) -> List[float]:
         """
@@ -112,12 +130,6 @@ class EmbeddingService:
             # Unexpected errors
             raise RuntimeError(f"Failed to generate embedding: {str(e)}")
     
-    @retry(
-        retry=retry_if_exception_type((RateLimitError, OpenAIError)),
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        reraise=True
-    )
     async def embed_batch(self, texts: List[str]) -> List[List[float]]:
         """
         Generate embeddings for multiple texts in a single API call.
@@ -145,51 +157,79 @@ class EmbeddingService:
         """
         if not texts:
             raise ValueError("Texts list cannot be empty")
-        
-        # Filter out empty texts and track indices
+
+        # Filter out empty texts and track original indices
         valid_texts = []
         valid_indices = []
         for i, text in enumerate(texts):
             if text and text.strip():
                 valid_texts.append(text)
                 valid_indices.append(i)
-        
+
         if not valid_texts:
             raise ValueError("All texts are empty")
-        
+
+        # Process in chunks to stay within OpenAI per-request limits and
+        # reduce the chance of hitting per-minute token rate limits.
+        all_embeddings: List[List[float]] = []
+        for chunk_start in range(0, len(valid_texts), _BATCH_CHUNK_SIZE):
+            chunk = valid_texts[chunk_start: chunk_start + _BATCH_CHUNK_SIZE]
+            chunk_embeddings = await self._embed_batch_chunk(chunk)
+            all_embeddings.extend(chunk_embeddings)
+            if chunk_start + _BATCH_CHUNK_SIZE < len(valid_texts):
+                # Brief pause between chunks to reduce rate-limit pressure.
+                await asyncio.sleep(0.5)
+
+        # Reconstruct the full-length result list (None slots for empty inputs)
+        result: List[Optional[List[float]]] = [None] * len(texts)
+        for i, embedding in zip(valid_indices, all_embeddings):
+            result[i] = embedding
+
+        return result
+
+    @retry(
+        retry=retry_if_exception_type(RateLimitError),
+        stop=stop_after_attempt(4),
+        wait=wait_random_exponential(multiplier=2, min=10, max=90),
+        reraise=True,
+    )
+    @retry(
+        retry=retry_if_exception_type(OpenAIError),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
+    )
+    async def _embed_batch_chunk(self, texts: List[str]) -> List[List[float]]:
+        """Send a single chunk of texts to OpenAI and return their embeddings."""
         try:
             response = await self.client.embeddings.create(
                 model=self.model,
-                input=valid_texts,
-                encoding_format="float"
+                input=texts,
+                encoding_format="float",
             )
-            
-            # Extract embeddings from response
+
             embeddings = [item.embedding for item in response.data]
-            
-            # Verify dimensions
+
             for embedding in embeddings:
                 if len(embedding) != self.dimension:
                     raise ValueError(
                         f"Expected embedding dimension {self.dimension}, "
                         f"got {len(embedding)}"
                     )
-            
-            # Reconstruct full list with None for empty texts
-            result = [None] * len(texts)
-            for i, embedding in zip(valid_indices, embeddings):
-                result[i] = embedding
-            
-            return result
-            
-        except RateLimitError as e:
-            # Rate limit error - will be retried by tenacity
+
+            return embeddings
+
+        except RateLimitError:
+            logger.warning(
+                "openai_rate_limit_hit",
+                service="embedding_service",
+                chunk_size=len(texts),
+                action="retrying with exponential back-off",
+            )
             raise
-        except OpenAIError as e:
-            # Other OpenAI errors - will be retried by tenacity
+        except OpenAIError:
             raise
         except Exception as e:
-            # Unexpected errors
             raise RuntimeError(f"Failed to generate embeddings: {str(e)}")
     
     async def embed_query(self, query: str) -> List[float]:

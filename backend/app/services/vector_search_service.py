@@ -8,6 +8,7 @@ framework filtering.
 
 from typing import List, Optional
 
+from app.core.config import settings
 from app.core.vector_database import VectorDatabaseManager, vector_db_manager
 from app.schemas.agent import DocumentationResult
 from app.services.local_embedding_service import LocalEmbeddingService, get_local_embedding_service
@@ -40,16 +41,16 @@ class VectorSearchService:
         """
         self.db_manager = db_manager or vector_db_manager
         self.embedding_service = embedding_service or get_local_embedding_service(
-            model_name="all-MiniLM-L6-v2",
-            dimension=384
+            model_name=settings.local_embedding_model,
+            dimension=settings.embedding_dimension
         )
     
     async def search_documentation(
         self,
         query: str,
         frameworks: Optional[List[str]] = None,
-        top_k: int = 10,
-        min_score: float = 0.7
+        top_k: int = settings.vector_search_top_k,
+        min_score: float = settings.vector_search_min_score
     ) -> List[DocumentationResult]:
         """
         Search framework documentation using semantic similarity.
@@ -158,8 +159,8 @@ class VectorSearchService:
         self,
         query: str,
         framework: str,
-        top_k: int = 10,
-        min_score: float = 0.7
+        top_k: int = settings.vector_search_top_k,
+        min_score: float = settings.vector_search_min_score
     ) -> List[DocumentationResult]:
         """
         Search documentation for a specific framework.
@@ -194,7 +195,7 @@ class VectorSearchService:
         query: str,
         frameworks: List[str],
         top_k_per_framework: int = 5,
-        min_score: float = 0.7
+        min_score: float = settings.vector_search_min_score
     ) -> dict[str, List[DocumentationResult]]:
         """
         Search documentation across multiple frameworks separately.

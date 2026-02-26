@@ -9,6 +9,7 @@ re-ranking, and implements self-correction for low-confidence results.
 import logging
 from typing import List, Optional
 
+from app.core.config import settings
 from app.schemas.agent import DocumentationResult
 from app.services.embedding_service import EmbeddingService, embedding_service
 from app.services.reranking_service import RerankingService, reranking_service
@@ -62,8 +63,8 @@ class DocumentationSearchAgent:
         self,
         query: str,
         frameworks: Optional[List[str]] = None,
-        top_k: int = 10,
-        min_score: float = 0.7
+        top_k: int = settings.vector_search_top_k,
+        min_score: float = settings.vector_search_min_score
     ) -> List[DocumentationResult]:
         """
         Search framework documentation with re-ranking and self-correction.
