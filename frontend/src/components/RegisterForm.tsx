@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { register as registerUser } from "../services/authService";
+import { register as registerUser, storeTokens } from "../services/authService";
 import { showError, showSuccess } from "../utils/toast";
 
 interface RegisterFormProps {
@@ -23,7 +23,8 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      await registerUser(data);
+      const tokens = await registerUser(data);
+      storeTokens(tokens);
       showSuccess("Registration successful! Welcome to DeveloperDoc.ai");
       onSuccess();
     } catch (err) {

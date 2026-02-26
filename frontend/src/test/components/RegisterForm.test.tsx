@@ -6,7 +6,7 @@ import RegisterForm from '../../components/RegisterForm'
 vi.mock('../../services/authService')
 vi.mock('../../utils/toast')
 
-import { register as registerUser } from '../../services/authService'
+import { register as registerUser, storeTokens } from '../../services/authService'
 import { showSuccess, showError } from '../../utils/toast'
 
 describe('RegisterForm', () => {
@@ -97,6 +97,18 @@ describe('RegisterForm', () => {
       await waitFor(() =>
         expect(registerUser).toHaveBeenCalledWith({ email: 'new@test.com', password: 'mypassword' })
       )
+    })
+
+    it('calls storeTokens with the returned tokens', async () => {
+      const tokens = { access_token: 'at', refresh_token: 'rt', token_type: 'bearer' }
+      vi.mocked(registerUser).mockResolvedValueOnce(tokens)
+
+      render(<RegisterForm onSuccess={onSuccess} />)
+      await userEvent.type(screen.getByLabelText(/email/i), 'new@test.com')
+      await userEvent.type(screen.getByLabelText(/password/i), 'mypassword')
+      await userEvent.click(screen.getByRole('button', { name: /^register$/i }))
+
+      await waitFor(() => expect(storeTokens).toHaveBeenCalledWith(tokens))
     })
 
     it('calls showSuccess with the welcome message', async () => {
