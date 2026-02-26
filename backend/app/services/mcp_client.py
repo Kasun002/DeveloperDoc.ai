@@ -53,24 +53,27 @@ class MCPConnectionError(MCPClientError):
 class MCPClient:
     """
     Client for communicating with MCP (Model Context Protocol) tools.
-    
+
     This client handles:
     - Tool discovery and listing
     - Tool invocation with parameter validation
     - Request/response serialization
     - Retry logic with exponential backoff for transient failures
     - Connection pooling and timeout management
-    
-    The client implements the MCP protocol specification for tool communication,
-    allowing agents to invoke external tools in a standardized way.
-    
+
+    **Graceful degradation**: When ``MCP_SERVICE_URL`` is not configured or the
+    service is unreachable, ``is_available`` is set to ``False``.  Callers should
+    check this flag before invoking tools so they can fall back to direct vector
+    search instead of waiting for 3 failed retries.
+
     Attributes:
         base_url: Base URL of the MCP service
         timeout: Request timeout in seconds
         max_retries: Maximum number of retry attempts
         client: HTTP client for making requests
+        is_available: False when MCP service is known to be unreachable
     """
-    
+
     def __init__(
         self,
         base_url: str = "http://localhost:8001",
@@ -88,7 +91,10 @@ class MCPClient:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.max_retries = max_retries
-        
+        # Tracks whether the MCP service is reachable.  Set to False after a
+        # persistent connection failure so callers can skip the retry overhead.
+        self.is_available: bool = True
+
         # Create HTTP client with connection pooling
         self.client = httpx.AsyncClient(
             base_url=self.base_url,
@@ -98,7 +104,7 @@ class MCPClient:
                 max_connections=20
             )
         )
-        
+
         logger.info(
             f"MCP client initialized",
             extra={
@@ -128,7 +134,7 @@ class MCPClient:
         before_sleep=before_sleep_log(logger, logging.WARNING),
         after=after_log(logger, logging.INFO)
     )
-    async def list_tools(self) -> List[MCPToolDefinition]:
+    async def list_tools(self) -> List[MCPToolDefinition]:  # noqa: D401
         """
         List all available MCP tools.
         
@@ -164,10 +170,15 @@ class MCPClient:
             return tool_list.tools
             
         except (httpx.TimeoutException, httpx.NetworkError) as e:
+            self.is_available = False
             logger.error(
-                f"Network error while listing tools",
-                extra={"error": str(e)},
-                exc_info=True
+                "mcp_service_unreachable",
+                extra={
+                    "error": str(e),
+                    "base_url": self.base_url,
+                    "action": "MCP features disabled. Set MCP_SERVICE_URL or start the mcp-tool container.",
+                },
+                exc_info=True,
             )
             raise MCPConnectionError(f"Failed to connect to MCP service: {str(e)}") from e
             
@@ -242,10 +253,11 @@ class MCPClient:
             raise
             
         except (httpx.TimeoutException, httpx.NetworkError) as e:
+            self.is_available = False
             logger.error(
-                f"Network error while getting tool",
+                "mcp_service_unreachable",
                 extra={"tool_name": tool_name, "error": str(e)},
-                exc_info=True
+                exc_info=True,
             )
             raise MCPConnectionError(f"Failed to connect to MCP service: {str(e)}") from e
             
@@ -319,6 +331,12 @@ class MCPClient:
             ... )
             >>> print(f"Found {len(result)} results")
         """
+        if not self.is_available:
+            raise MCPConnectionError(
+                "MCP service is currently unavailable. "
+                "Start the mcp-tool container or set MCP_SERVICE_URL."
+            )
+
         try:
             logger.info(
                 f"Calling MCP tool",
@@ -328,7 +346,7 @@ class MCPClient:
                     "trace_id": trace_id
                 }
             )
-            
+
             # Prepare request
             request_data = MCPToolRequest(
                 tool_name=tool_name,
@@ -389,14 +407,16 @@ class MCPClient:
             raise
             
         except (httpx.TimeoutException, httpx.NetworkError) as e:
+            self.is_available = False
             logger.error(
-                f"Network error while calling tool",
+                "mcp_service_unreachable",
                 extra={
                     "tool_name": tool_name,
                     "error": str(e),
-                    "trace_id": trace_id
+                    "trace_id": trace_id,
+                    "action": "MCP features disabled. Set MCP_SERVICE_URL or start the mcp-tool container.",
                 },
-                exc_info=True
+                exc_info=True,
             )
             raise MCPConnectionError(f"Failed to connect to MCP service: {str(e)}") from e
             

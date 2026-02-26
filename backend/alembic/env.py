@@ -9,6 +9,7 @@ Alembic is used for version-controlled database schema changes, allowing
 reproducible and trackable database updates across environments.
 """
 
+import os
 import sys
 from logging.config import fileConfig
 from pathlib import Path
@@ -27,10 +28,30 @@ from app.core.database import Base
 # access to the values within the .ini file in use.
 config = context.config
 
-# Set the database URL from application settings
-# Use vector database URL for migrations since framework_documentation
-# and semantic_cache tables use pgvector extension
-config.set_main_option("sqlalchemy.url", settings.vector_database_url)
+# ---------------------------------------------------------------------------
+# Dual-database support
+# ---------------------------------------------------------------------------
+# This project has two PostgreSQL databases:
+#   - Main DB  (DATABASE_URL)        : users, password_reset_tokens
+#   - Vector DB (VECTOR_DATABASE_URL): framework_documentation, semantic_cache
+#
+# By default Alembic targets the VECTOR DB because that is where the pgvector
+# migrations live.  To run against the MAIN DB instead, set the environment
+# variable ALEMBIC_TARGET=main before invoking alembic:
+#
+#   ALEMBIC_TARGET=main alembic upgrade head    # apply user/auth schema
+#   alembic upgrade head                         # apply vector DB schema (default)
+# ---------------------------------------------------------------------------
+_alembic_target = os.environ.get("ALEMBIC_TARGET", "vector").lower()
+
+if _alembic_target == "main":
+    _db_url = settings.database_url
+    print(f"[alembic] Targeting MAIN database (DATABASE_URL)")
+else:
+    _db_url = settings.vector_database_url
+    print(f"[alembic] Targeting VECTOR database (VECTOR_DATABASE_URL)")
+
+config.set_main_option("sqlalchemy.url", _db_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

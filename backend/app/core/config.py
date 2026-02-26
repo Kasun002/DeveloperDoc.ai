@@ -94,10 +94,15 @@ class Settings(BaseSettings):
     
     # Cross-encoder model for re-ranking
     cross_encoder_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-    
-    # Embedding model
+
+    # Embedding model (OpenAI — used when llm_provider=openai and local_embeddings=false)
     embedding_model: str = "text-embedding-3-small"
-    embedding_dimension: int = 1536
+
+    # Local embedding model (sentence-transformers — used for vector search and semantic cache)
+    # After migrating to local embeddings (migration change_embedding_dimension_to_384),
+    # the DB schema expects 384-dimensional vectors.  Keep this in sync with the DB column.
+    local_embedding_model: str = "all-MiniLM-L6-v2"
+    embedding_dimension: int = 384  # 384 for local embeddings; 1536 for OpenAI text-embedding-3-small
     
     # MCP Tool Configuration
     mcp_service_url: str = "http://localhost:8001"  # MCP service base URL

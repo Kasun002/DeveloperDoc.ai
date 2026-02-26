@@ -42,18 +42,25 @@ class CachedResponse(BaseModel):
 class SemanticCache:
     """
     Semantic cache using Redis and pgvector for similarity-based lookups.
-    
+
     This cache stores responses with their embeddings and performs similarity
     search to find cached responses for similar prompts. Uses a similarity
     threshold of 0.95 (cosine similarity) to determine cache hits.
-    
+
+    The expected embedding dimension is read from ``settings.embedding_dimension``
+    (default 384, matching the local sentence-transformers model).  If you change
+    the embedding provider you **must** also run the corresponding Alembic
+    migration to alter the ``semantic_cache.embedding`` column dimension,
+    otherwise ``set()`` calls will fail.
+
     Attributes:
         redis_client: Async Redis client for key-value storage
         pg_pool: AsyncPG connection pool for pgvector similarity search
         similarity_threshold: Minimum similarity score for cache hits (default: 0.95)
         default_ttl: Default time-to-live in seconds (default: 3600 = 1 hour)
+        expected_embedding_dimension: Dimension that the DB column expects
     """
-    
+
     def __init__(
         self,
         redis_url: Optional[str] = None,
@@ -76,6 +83,9 @@ class SemanticCache:
         self.default_ttl = default_ttl
         self.redis_client: Optional[aioredis.Redis] = None
         self.pg_pool: Optional[asyncpg.Pool] = None
+        # Must match the vector(N) dimension of the semantic_cache.embedding column.
+        # After migration change_embedding_dimension_to_384 this is 384.
+        self.expected_embedding_dimension: int = settings.embedding_dimension
     
     async def connect(self):
         """
@@ -146,6 +156,34 @@ class SemanticCache:
         except Exception as e:
             logger.warning("connection_close_error", service="semantic_cache", backend="postgresql", error=str(e))
     
+    def _validate_embedding_dimension(self, embedding: List[float]) -> bool:
+        """
+        Check that the embedding dimension matches the DB column.
+
+        Logs an actionable ERROR (not a silent warning) when there is a mismatch
+        so developers can catch it immediately rather than wondering why cache
+        writes are silently dropped.
+
+        Returns True when the dimension is correct, False otherwise.
+        """
+        actual = len(embedding)
+        if actual != self.expected_embedding_dimension:
+            logger.error(
+                "embedding_dimension_mismatch",
+                service="semantic_cache",
+                expected_dimension=self.expected_embedding_dimension,
+                actual_dimension=actual,
+                action=(
+                    f"The semantic_cache table expects vector({self.expected_embedding_dimension}). "
+                    f"You are supplying a {actual}-dimensional vector. "
+                    "Fix: ensure EMBEDDING_DIMENSION in .env matches the DB column. "
+                    "If you switched embedding providers, run the corresponding Alembic migration "
+                    "to alter the column (e.g. alembic upgrade head)."
+                ),
+            )
+            return False
+        return True
+
     def _generate_cache_key(self, prompt: str) -> str:
         """
         Generate a deterministic cache key from prompt.
@@ -375,9 +413,13 @@ class SemanticCache:
         if not self.redis_client or not self.pg_pool:
             logger.warning("Cache not connected, skipping cache storage")
             return False
-        
+
+        # Guard against silent dimension mismatches before touching the DB.
+        if not self._validate_embedding_dimension(embedding):
+            return False
+
         cache_ttl = ttl or self.default_ttl
-        
+
         try:
             # Store in Redis for fast exact lookups
             cache_key = self._generate_cache_key(prompt)
