@@ -189,9 +189,9 @@ flowchart TD
 
     E --> F["Supervisor\ndecides route"]
 
-    F -->|SEARCH_ONLY|        G["Documentation Search"]
-    F -->|CODE_ONLY|          H["Code Generation"]
-    F -->|SEARCH_THEN_CODE|   G
+    F -->|SEARCH_ONLY| G["Documentation Search"]
+    F -->|CODE_ONLY| H["Code Generation"]
+    F -->|SEARCH_THEN_CODE| G
 
     G --> G1["Embed query\n→ pgvector similarity search"]
     G1 --> G2["Cross-encoder re-rank\n→ top K docs"]
