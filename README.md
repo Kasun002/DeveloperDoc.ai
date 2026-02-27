@@ -114,84 +114,111 @@ DeveloperDoc.ai is an AI-powered code generation system. Users submit natural-la
 
 ## 2. High-Level Architecture
 
-```
-┌─────────────────────────────────────────┐
-│        Browser / Frontend               │
-│   React 19 + Vite  (localhost:5173)     │
-│   Auth → Chat → Markdown rendering      │
-└──────────────────┬──────────────────────┘
-                   │  HTTP / REST
-                   ▼
-┌─────────────────────────────────────────┐
-│         Backend API (FastAPI)           │
-│         localhost:8000                  │
-│                                         │
-│  1. Auth endpoints (JWT)                │
-│  2. Agent query endpoint                │
-│  3. Dashboard endpoints                 │
-│  4. MCP Tool endpoints                  │
-│                                         │
-│  ┌───────────────────────────────────┐  │
-│  │     Semantic Cache               │  │
-│  │  Redis exact-match + pgvector    │  │
-│  │  similarity (threshold 0.95)     │  │
-│  └───────────────────────────────────┘  │
-│                   │ cache miss          │
-│                   ▼                     │
-│  ┌───────────────────────────────────┐  │
-│  │     LangGraph Workflow Engine    │  │
-│  │                                   │  │
-│  │  Supervisor ──► Search Agent     │  │
-│  │      │          (pgvector +      │  │
-│  │      │           re-ranker)      │  │
-│  │      └────────► CodeGen Agent   │  │
-│  │                  (LLM + docs)    │  │
-│  └───────────────────────────────────┘  │
-└─────────────────────────────────────────┘
-              │              │
-    ┌─────────┘              └─────────┐
-    ▼                                  ▼
-PostgreSQL (main)          PostgreSQL + pgvector
-localhost:5432             localhost:5433
-Users, auth tokens         Framework docs, embeddings
-                           Semantic cache table
-              │
-              ▼
-           Redis
-        localhost:6379
-    Exact-match cache
-    Tool result cache
+```mermaid
+graph TB
+    %% ── Frontend ──────────────────────────────────────────────────────────
+    subgraph Browser["Browser / Frontend"]
+        FE["React 19 + Vite · localhost:5173\n─────────────────────────────\nAuth → Chat → Markdown rendering"]
+    end
+
+    %% ── Backend ───────────────────────────────────────────────────────────
+    subgraph Backend["Backend API · FastAPI · localhost:8000"]
+
+        subgraph Endpoints["Endpoints"]
+            E1["Auth endpoints (JWT)"]
+            E2["Agent query endpoint"]
+            E3["Dashboard endpoints"]
+            E4["MCP Tool endpoints"]
+        end
+
+        subgraph Cache["Semantic Cache"]
+            SC["Redis exact-match\n+\npgvector similarity\n(threshold 0.95)"]
+        end
+
+        subgraph Workflow["LangGraph Workflow Engine"]
+            SUP["Supervisor"]
+            SA["Search Agent\n──────────────\npgvector + re-ranker"]
+            CA["CodeGen Agent\n──────────────\nLLM + docs"]
+        end
+
+        Endpoints --> Cache
+        Cache -->|cache miss| Workflow
+        SUP --> SA
+        SUP --> CA
+    end
+
+    %% ── Data Stores ───────────────────────────────────────────────────────
+    PG1[("PostgreSQL · main\nlocalhost:5432\n──────────────\nUsers · Auth tokens")]
+    PG2[("PostgreSQL + pgvector\nlocalhost:5433\n──────────────\nFramework docs\nEmbeddings\nSemantic cache table")]
+    RD[("Redis\nlocalhost:6379\n──────────────\nExact-match cache\nTool result cache")]
+
+    %% ── Edges ─────────────────────────────────────────────────────────────
+    FE <-->|HTTP / REST| Endpoints
+
+    Backend --> PG1
+    Backend --> PG2
+    Cache   --> RD
+    SA      --> PG2
+
+    %% ── Styles ────────────────────────────────────────────────────────────
+    classDef frontend  fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
+    classDef endpoint  fill:#dcfce7,stroke:#22c55e,color:#14532d
+    classDef cache     fill:#fef9c3,stroke:#eab308,color:#713f12
+    classDef workflow  fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+    classDef postgres  fill:#f3e8ff,stroke:#a855f7,color:#581c87
+    classDef redis     fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+
+    class FE frontend
+    class E1,E2,E3,E4 endpoint
+    class SC,Cache cache
+    class SUP,SA,CA workflow
+    class PG1,PG2 postgres
+    class RD redis
 ```
 
 ### Request Lifecycle
 
-```
-User Query
-   ↓
-POST /api/v1/agent/query
-   ↓
-Auto-detect framework from prompt
-   ↓
-Check semantic cache
-   ├── Cache HIT  → return immediately (~50 ms)
-   └── Cache MISS → LangGraph workflow
-                       ↓
-                    Supervisor decides route:
-                    ├── SEARCH_ONLY
-                    ├── CODE_ONLY
-                    └── SEARCH_THEN_CODE
-                       ↓
-                    Documentation Search (if needed)
-                      embed query → pgvector similarity
-                      → cross-encoder re-rank → top K docs
-                       ↓
-                    Code Generation (if needed)
-                      LLM + doc context → code
-                      → syntax validate → retry (max 2)
-                       ↓
-                    Store in semantic cache
-                       ↓
-                    Return AgentResponse to frontend
+```mermaid
+flowchart TD
+    A([User Query]) --> B["POST /api/v1/agent/query"]
+    B --> C["Auto-detect framework\nfrom prompt"]
+    C --> D{"Check\nSemantic Cache"}
+
+    D -->|Cache HIT ~50 ms| Z([Return response to frontend])
+    D -->|Cache MISS| E["LangGraph Workflow"]
+
+    E --> F["Supervisor\ndecides route"]
+
+    F -->|SEARCH_ONLY|        G["Documentation Search"]
+    F -->|CODE_ONLY|          H["Code Generation"]
+    F -->|SEARCH_THEN_CODE|   G
+
+    G --> G1["Embed query\n→ pgvector similarity search"]
+    G1 --> G2["Cross-encoder re-rank\n→ top K docs"]
+    G2 -->|SEARCH_THEN_CODE| H
+
+    H --> H1["LLM + doc context\n→ generate code"]
+    H1 --> H2{"Syntax\nvalid?"}
+    H2 -->|No — retry max 2x| H1
+    H2 -->|Yes| I["Store in\nsemantic cache"]
+
+    G2 -->|SEARCH_ONLY| I
+    I --> Z
+
+    %% ── Styles ────────────────────────────────────────────────────────────
+    classDef io        fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
+    classDef process   fill:#dcfce7,stroke:#22c55e,color:#14532d
+    classDef decision  fill:#fef9c3,stroke:#eab308,color:#713f12
+    classDef search    fill:#f3e8ff,stroke:#a855f7,color:#581c87
+    classDef codegen   fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+    classDef cache     fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+
+    class A,Z io
+    class B,C,E,F process
+    class D,H2 decision
+    class G,G1,G2 search
+    class H,H1 codegen
+    class I cache
 ```
 
 ---
